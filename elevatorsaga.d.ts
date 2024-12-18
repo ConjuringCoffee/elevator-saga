@@ -36,6 +36,7 @@ interface Elevator {
     stop: () => void;
     /**
      * Gets the floor number that the elevator currently is on.
+     * Note that this is a rounded number and does not necessarily mean the elevator is in a stopped state.
      */
     currentFloor: () => number;
     /**

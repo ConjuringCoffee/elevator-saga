@@ -1,18 +1,28 @@
+// Challenge #1: Transport 15 people in 60 seconds or less
+// Three floors: 0-2
+// One elevator
+
 /// <reference path="./elevatorsaga.d.ts" />
 /** @type {Game} */
 ({
     init: function (elevators, floors) {
-        var elevator = elevators[0]; // Let's use the first elevator
+        // Let's only use the first elevator for now
+        const elevator = elevators[0];
 
-        // Whenever the elevator is idle (has no more queued destinations) ...
-        elevator.on("idle", function () {
-            // let's go to all the floors (or did we forget one?)
-            elevator.goToFloor(0);
-            elevator.goToFloor(1);
+        elevator.on("floor_button_pressed", (floorNumber) => {
+            elevator.goToFloor(floorNumber);
         });
+
+        floors.forEach((floor) => {
+            floor.on("up_button_pressed", () => {
+                elevator.goToFloor(floor.floorNum());
+            });
+            floor.on("down_button_pressed", () => {
+                elevator.goToFloor(floor.floorNum());
+            });
+        })
     },
     update: function (dt, elevators, floors) {
-        // We normally don't need to do anything here
-        var num = dt;
+        // Do nothing for now
     }
 })
