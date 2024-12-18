@@ -92,7 +92,7 @@
             }
 
             console.debug(`E${bestElevator._index}: Chosen as best elevator`);
-
+            // console.debug(`E${bestElevator._index}: Current load factor is ${bestElevator.loadFactor()}`);
             return bestElevator;
         }
 
@@ -145,6 +145,22 @@
             elevator.destinationQueue = newDestinationQueue;
             console.debug(`E${elevator._index}: New destination queue:`, elevator.destinationQueue.toString());
             elevator.checkDestinationQueue();
+
+            setGoingUpDownIndicators(elevator, elevator.destinationQueue[0]);
+        }
+
+        const setGoingUpDownIndicators = (/** @type {Elevator} */ elevator, /** @type {number} */nextFloorNumber) => {
+            const distance = elevator.currentFloor() - nextFloorNumber;
+            if (distance < 0) {
+                elevator.goingUpIndicator(true);
+                elevator.goingDownIndicator(false);
+            } else if (distance > 0) {
+                elevator.goingUpIndicator(false);
+                elevator.goingDownIndicator(true);
+            } else {
+                elevator.goingUpIndicator(true);
+                elevator.goingDownIndicator(true);
+            }
         }
 
         elevators.forEach((elevator, index) => {
@@ -153,6 +169,11 @@
             elevator.on("floor_button_pressed", (floorNumber) => {
                 insertDestination(elevator, floorNumber);
             });
+
+            elevator.on("stopped_at_floor", (floorNumber) => {
+                const nextFloorNumber = elevator.destinationQueue[0] ?? floorNumber;
+                setGoingUpDownIndicators(elevator, nextFloorNumber);
+            })
         });
 
         floors.forEach((floor) => {
