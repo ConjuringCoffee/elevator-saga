@@ -76,6 +76,8 @@ interface Elevator {
      */
     getPressedFloors: () => number[];
     on<Event extends keyof ElevatorEvents>(type: Event, handler: ElevatorEvents[Event]): void;
+
+    _index: number;
 }
 
 interface FloorEvents {
