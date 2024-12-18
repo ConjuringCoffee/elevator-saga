@@ -43,7 +43,7 @@
                 };
             }
 
-            const isElevatorMovingTowardsOrStoppedOnFloor = (/** @type {Elevator} */ elevator) => {
+            const isElevatorMovingTowardsFloor = (/** @type {Elevator} */ elevator) => {
                 // TODO: Handle edge case: Rounded currentFloor() could mean that the floor was already passed
                 const distance = elevator.currentFloor() - floorNumber;
 
@@ -51,21 +51,35 @@
                     return true;
                 } else if (distance <= 0 && elevator.destinationDirection() === "up") {
                     return true;
-                } else if (distance === 0 && elevator.destinationDirection() === "stopped") {
-                    return true;
                 } else {
                     return false;
                 }
             }
 
+            const isElevatorStoppedOnFloor = (/** @type {Elevator} */ elevator) => {
+                return elevator.currentFloor() === floorNumber && elevator.destinationDirection() === "stopped";
+            }
+
+            const isElevatorIdle = (/** @type {Elevator} */ elevator) => {
+                return elevator.destinationQueue.length === 0 && elevator.destinationDirection() === "stopped";
+            }
+
             elevators.forEach((elevator) => {
-                if (isElevatorMovingTowardsOrStoppedOnFloor(elevator)) {
+                if (isElevatorIdle(elevator)) {
                     setBestIfCurrentDistanceIsBest(elevator);
                 }
             });
 
             if (bestElevator === null) {
-                console.debug('No elevator moving towards the floor, so disregard the direction');
+                elevators.forEach((elevator) => {
+                    if (isElevatorStoppedOnFloor(elevator) || isElevatorMovingTowardsFloor(elevator)) {
+                        setBestIfCurrentDistanceIsBest(elevator);
+                    }
+                });
+            }
+
+            if (bestElevator === null) {
+                console.debug('No elevator moving towards or on the floor');
 
                 elevators.forEach((elevator) => {
                     setBestIfFutureDistanceIsBest(elevator);
@@ -73,7 +87,7 @@
             }
 
             if (bestElevator === null) {
-                console.error('No elevator found, use first elevator as fallback');
+                console.warn('No elevator found, use first elevator as fallback');
                 bestElevator = elevators[0];
             }
 
