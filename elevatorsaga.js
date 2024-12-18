@@ -1,7 +1,3 @@
-// Challenge #1: Transport 15 people in 60 seconds or less
-// Three floors: 0-2
-// One elevator
-
 /// <reference path="./elevatorsaga.d.ts" />
 /** @type {Game} */
 ({
