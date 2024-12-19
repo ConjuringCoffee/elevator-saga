@@ -15,6 +15,15 @@
             elevator.on("stopped_at_floor", (floorNumber) => {
                 console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumber}`);
             });
+
+            elevator.on("floor_button_pressed", (floorNumber) => {
+                console.debug(`\nElevator ${elevator._index}: Button for floor ${floorNumber} was pressed`);
+
+                if (elevator.destinationQueue.length === 0) {
+                    elevator.destinationQueue.push(floorNumber);
+                    elevator.checkDestinationQueue();
+                }
+            });
         });
 
         floors.forEach((floor) => {
@@ -38,6 +47,7 @@
             });
         });
     },
+
     update: function (dt, elevators, floors) {
         // Do nothing for now
     },

@@ -22,6 +22,7 @@ beforeEach(() => {
         return {
             currentFloorValue: 0,
             destinationDirectionValue: "stopped",
+            destinationQueue: [],
             handlers: {},
             currentFloor() {
                 return this.currentFloorValue;
@@ -36,7 +37,8 @@ beforeEach(() => {
                 if (this.handlers[type]) {
                     (this.handlers[type] as any)(...args);
                 }
-            }
+            },
+            checkDestinationQueue: jest.fn(() => { })
         }
     }
 
@@ -75,24 +77,23 @@ test('All requests on floors are false in the beginning', () => {
 });
 
 describe("Button requests on floors:", () => {
+    var mockFloor: MockFloor;
+
     beforeEach(() => {
         mockElevators.forEach((mockElevator) => {
             mockElevator.currentFloorValue = 1;
-        })
+        });
+        mockFloor = mockFloors[0];
     });
 
     describe('If no elevator is stopped on the same floor:', () => {
         test('Up button request is remembered', () => {
-            const mockFloor = mockFloors[0];
             mockFloor.trigger('up_button_pressed');
-
             expect(mockFloor._upRequestPending).toBe(true);
         });
 
         test('Down button request is remembered', () => {
-            const mockFloor = mockFloors[0];
             mockFloor.trigger('down_button_pressed');
-
             expect(mockFloor._downRequestPending).toBe(true);
         });
     })
@@ -106,17 +107,23 @@ describe("Button requests on floors:", () => {
         });
 
         test('Up button request is remembered', () => {
-            const mockFloor = mockFloors[0];
             mockFloor.trigger('up_button_pressed');
-
             expect(mockFloor._upRequestPending).toBe(false);
         });
 
         test('Down button request is remembered', () => {
-            const mockFloor = mockFloors[0];
             mockFloor.trigger('down_button_pressed');
-
             expect(mockFloor._downRequestPending).toBe(false);
         });
     });
+});
+
+describe("Floor button presses:", () => {
+    test("If destination queue is empty, go to floor", () => {
+        const mockElevator = mockElevators[0];
+        mockElevator.trigger("floor_button_pressed", 1);
+
+        expect(mockElevator.destinationQueue?.toString()).toBe([1].toString());
+        expect(mockElevator.checkDestinationQueue).toHaveBeenCalled();
+    })
 });
