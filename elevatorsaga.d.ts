@@ -27,7 +27,7 @@ interface Elevator {
      * Queue the elevator to go to specified floor number. 
      * If you specify true as second argument, the elevator will go to that floor directly, and then go to any other queued floors.
      */
-    goToFloor: (targetFloor: number, goDirectly: boolean?) => void;
+    goToFloor: (targetFloor: number, goDirectly?: boolean) => void;
     /**
      * Clear the destination queue and stop the elevator if it is moving. 
      * Note that you normally don't need to stop elevators - it is intended for advanced solutions with in-transit rescheduling logic. 
@@ -75,7 +75,9 @@ interface Elevator {
      * Gets the currently pressed floor numbers as an array.
      */
     getPressedFloors: () => number[];
-    on<Event extends keyof ElevatorEvents>(type: Event, handler: ElevatorEvents[Event]): void;
+    on: <Event extends keyof ElevatorEvents>(type: Event, handler: ElevatorEvents[Event]) => void;
+
+    _index: number;
 }
 
 interface FloorEvents {
@@ -89,7 +91,8 @@ interface Floor {
      */
     floorNum: () => number;
     on<Event extends keyof FloorEvents>(type: Event, handler: FloorEvents[Event]): void;
-
+    _upRequestPending: boolean;
+    _downRequestPending: boolean;
 }
 
 interface Game {
