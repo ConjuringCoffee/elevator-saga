@@ -1,8 +1,10 @@
-interface MockElevator extends Partial<Elevator> {
+interface MockElevator extends Elevator {
     currentFloorValue: number;
     destinationDirectionValue: "up" | "down" | "stopped";
     pressedFloors: number[];
     handlers: { [K in keyof ElevatorEvents]?: ElevatorEvents[K] };
+    goingUpIndicatorValue: boolean;
+    goingDownIndicatorValue: boolean;
     trigger: <Event extends keyof ElevatorEvents>(type: Event, ...args: Parameters<ElevatorEvents[Event]>) => void;
 }
 
@@ -12,7 +14,22 @@ interface MockFloor extends Partial<Floor> {
 }
 
 const expectDestinationQueueToBe = (elevator: MockElevator, expectedQueue: number[]) => {
-    expect(elevator.destinationQueue?.toString()).toBe(expectedQueue.toString());
+    expect(elevator.destinationQueue.toString()).toBe(expectedQueue.toString());
+}
+
+const expectOnlyUpIndicator = (elevator: MockElevator) => {
+    expect(elevator.goingUpIndicator(null)).toBe(true);
+    expect(elevator.goingDownIndicator(null)).toBe(false);
+}
+
+const expectOnlyDownIndicator = (elevator: MockElevator) => {
+    expect(elevator.goingUpIndicator(null)).toBe(false);
+    expect(elevator.goingDownIndicator(null)).toBe(true);
+}
+
+const expectUpAndDownIndicators = (elevator: MockElevator) => {
+    expect(elevator.goingUpIndicator(null)).toBe(true);
+    expect(elevator.goingDownIndicator(null)).toBe(true);
 }
 
 const fs = require('fs');
@@ -25,11 +42,14 @@ var game: Game;
 beforeEach(() => {
     const createElevator = (): MockElevator => {
         return {
+            _index: 0,
             currentFloorValue: 0,
             destinationDirectionValue: "stopped",
             destinationQueue: [],
             pressedFloors: [],
             handlers: {},
+            goingUpIndicatorValue: true,
+            goingDownIndicatorValue: true,
             currentFloor() {
                 return this.currentFloorValue;
             },
@@ -47,7 +67,31 @@ beforeEach(() => {
             checkDestinationQueue: jest.fn(() => { }),
             getPressedFloors() {
                 return this.pressedFloors;
-            }
+            },
+            goingUpIndicator(newIndicatorState) {
+                if (newIndicatorState !== null) {
+                    this.goingUpIndicatorValue = newIndicatorState;
+                }
+                return this.goingUpIndicatorValue;
+            },
+            goingDownIndicator(newIndicatorState) {
+                if (newIndicatorState !== null) {
+                    this.goingDownIndicatorValue = newIndicatorState;
+                }
+                return this.goingDownIndicatorValue;
+            },
+            goToFloor() {
+                throw new Error("Not implemented yet");
+            },
+            stop() {
+                throw new Error("Not implemented yet");
+            },
+            maxPassengerCount: () => {
+                throw new Error("Not implemented yet");
+            },
+            loadFactor: () => {
+                throw new Error("Not implemented yet");
+            },
         }
     }
 
@@ -134,6 +178,7 @@ describe("Floor button presses:", () => {
 
         expectDestinationQueueToBe(mockElevator, [1]);
         expect(mockElevator.checkDestinationQueue).toHaveBeenCalled();
+        expectOnlyUpIndicator(mockElevator);
     });
 });
 
@@ -145,5 +190,6 @@ describe("Elevator stops:", () => {
 
         expectDestinationQueueToBe(mockElevator, [2]);
         expect(mockElevator.checkDestinationQueue).toHaveBeenCalled();
+        expectOnlyUpIndicator(mockElevator);
     });
 })

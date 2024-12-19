@@ -3,6 +3,22 @@
 ({
     init: function (elevators, floors) {
         elevators.forEach((elevator, index) => {
+            const setDestination = (/** @type {number} */ floorNumber) => {
+                elevator.destinationQueue.push(floorNumber);
+                elevator.checkDestinationQueue();
+
+                const distance = floorNumber - elevator.currentFloor();
+                if (distance > 0) {
+                    elevator.goingUpIndicator(true);
+                    elevator.goingDownIndicator(false);
+                } else if (distance < 0) {
+                    elevator.goingUpIndicator(false);
+                    elevator.goingDownIndicator(true);
+                } else {
+                    throw new Error('The elevator is already on the destination');
+                }
+            };
+
             elevator._index = index;
 
             elevator.on("stopped_at_floor", (floorNumber) => {
@@ -10,8 +26,7 @@
 
                 const pressedFloors = elevator.getPressedFloors();
                 if (pressedFloors.length > 0) {
-                    elevator.destinationQueue.push(pressedFloors[0]);
-                    elevator.checkDestinationQueue();
+                    setDestination(pressedFloors[0]);
                 }
 
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
@@ -21,8 +36,7 @@
                 console.debug(`\nElevator ${elevator._index}: Button for floor ${floorNumber} was pressed`);
 
                 if (elevator.destinationQueue.length === 0) {
-                    elevator.destinationQueue.push(floorNumber);
-                    elevator.checkDestinationQueue();
+                    setDestination(floorNumber);
                 }
 
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
