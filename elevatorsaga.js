@@ -3,6 +3,10 @@
 ({
     init: function (elevators, floors) {
         const setElevatorDestination = (/** @type {Elevator} */ elevator, /** @type {number} */ floorNumber) => {
+            while (elevator.destinationQueue.length > 0) {
+                elevator.destinationQueue.pop();
+            }
+
             elevator.destinationQueue.push(floorNumber);
             elevator.checkDestinationQueue();
         }
@@ -101,11 +105,11 @@
                     throw new Error('A button was pressed for the current floor');
                 }
 
-                if (elevator.destinationQueue.length === 0) {
+                if (elevator.destinationQueue.length === 0
+                    || Math.abs(elevator.currentFloor() - floorNumberPressed) < Math.abs(elevator.currentFloor() - elevator.destinationQueue[0])) {
                     setDestination(floorNumberPressed);
                     setUpDownIndicatorsByDestination();
                 }
-
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
             });
         });

@@ -195,6 +195,22 @@ describe("Floor button presses:", () => {
         expect(floor._upRequestPending).toBe(true);
         expect(floor._downRequestPending).toBe(false);
     });
+
+    test("If a floor closer was pressed now, override it", () => {
+        elevator.pressedFloors = [3];
+        elevator.destinationQueue = [3];
+        elevator.trigger("floor_button_pressed", 2);
+
+        expectDestinationQueueToBe(elevator, [2]);
+    });
+
+    test("If a floor further away was pressed now, do not override it", () => {
+        elevator.pressedFloors = [2];
+        elevator.destinationQueue = [2];
+        elevator.trigger("floor_button_pressed", 3);
+
+        expectDestinationQueueToBe(elevator, [2]);
+    })
 });
 
 describe("Elevator stopped:", () => {
