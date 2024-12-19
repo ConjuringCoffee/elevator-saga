@@ -215,6 +215,7 @@ describe("Floor button presses:", () => {
 
 describe("Elevator stopped:", () => {
     var elevator: MockElevator;
+    var stoppedFloor: MockFloor;
 
     beforeEach(() => {
         // The elevator drives to floor 1 and stops there
@@ -222,6 +223,8 @@ describe("Elevator stopped:", () => {
         elevator.currentFloorValue = 1;
         elevator.goingDownIndicatorValue = true;
         elevator.goingUpIndicatorValue = true;
+
+        stoppedFloor = floors[elevator.currentFloorValue];
     });
 
     test("If floor buttons are already pressed, go to the nearest next", () => {
@@ -257,8 +260,41 @@ describe("Elevator stopped:", () => {
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, [2]);
             expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+
+            // TODO: Only expect one direction. Otherwise, people might get onto the elevator simulateneously for different directions
             expectUpAndDownIndicators(elevator);
-        })
+        });
+
+        test("If the elevator moves up, clear the up request", () => {
+            elevator.destinationQueue = [2];
+            elevator.pressedFloors = [2];
+
+            stoppedFloor._upRequestPending = true;
+            stoppedFloor._downRequestPending = true;
+
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+
+            expectDestinationQueueToBe(elevator, [2]);
+
+            const floor = floors[elevator.currentFloorValue];
+            expect(floor._upRequestPending).toBe(false);
+            expect(floor._downRequestPending).toBe(true);
+        });
+
+        test("If the elevator moves down, clear the down request", () => {
+            elevator.destinationQueue = [0];
+            elevator.pressedFloors = [0];
+
+            stoppedFloor._upRequestPending = true;
+            stoppedFloor._downRequestPending = true;
+
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+
+            expectDestinationQueueToBe(elevator, [0]);
+
+            expect(stoppedFloor._upRequestPending).toBe(true);
+            expect(stoppedFloor._downRequestPending).toBe(false);
+        });
     })
 });
 
@@ -284,4 +320,6 @@ describe("Passing floor:", () => {
     });
     // TODO: Test for: If on the way up down pressed floor, then set destination
     // TODO: Test for when both indicators switch to single indicator
+    // TODO: Elevators sometimes reach their destination but another elevator already picked all people up
+    // TODO: Floor buttons are not pressed again by new passengers if the button is already pressed
 });

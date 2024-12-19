@@ -76,13 +76,13 @@
             }
 
             const getFloorsWithRequest = () => {
-                return floors.filter((floor) => floor._downRequestPending === true || floor._upRequestPending);
+                return floors.filter((floor) => floor._downRequestPending || floor._upRequestPending);
             }
 
             elevator._index = index;
 
-            elevator.on("stopped_at_floor", (floorNumber) => {
-                console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumber}`);
+            elevator.on("stopped_at_floor", (floorNumberStopped) => {
+                console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumberStopped}`);
 
                 if (elevator.getPressedFloors().length > 0) {
                     setDestination(getClosestPressedFloor());
@@ -93,11 +93,22 @@
                     const floorsWithRequest = getFloorsWithRequest();
                     const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
 
-                    if (!floorNumbersWithRequest.includes(floorNumber)) {
+                    if (!floorNumbersWithRequest.includes(floorNumberStopped)) {
                         if (floorNumbersWithRequest.length > 0) {
                             const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
                             setDestination(closestFloorNumber);
                         }
+                    }
+                }
+
+                if (elevator.destinationQueue.length > 0) {
+                    // Clear requests in case the floor button was already pressed by a previous passenger
+                    if (elevator.destinationQueue[0] > floorNumberStopped) {
+                        floors[floorNumberStopped]._upRequestPending = false;
+                    } else if (elevator.destinationQueue[0] < floorNumberStopped) {
+                        floors[floorNumberStopped]._downRequestPending = false;
+                    } else {
+                        throw new Error('The next destination should not be the current floor');
                     }
                 }
 
@@ -206,7 +217,15 @@
     },
 
     update: function (dt, elevators, floors) {
-        // Do nothing for now
+        console.debug("\nUpdate:");
+        floors.forEach((floor) => {
+            if (floor._upRequestPending) {
+                console.debug(`Floor ${floor.floorNum()} has up request`);
+            }
+            if (floor._downRequestPending) {
+                console.debug(`Floor ${floor.floorNum()} has down request`);
+            }
+        })
     },
 
 })
