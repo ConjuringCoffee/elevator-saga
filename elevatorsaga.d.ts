@@ -75,7 +75,7 @@ interface Elevator {
      * Gets the currently pressed floor numbers as an array.
      */
     getPressedFloors: () => number[];
-    on<Event extends keyof ElevatorEvents>(type: Event, handler: ElevatorEvents[Event]): void;
+    on: <Event extends keyof ElevatorEvents>(type: Event, handler: ElevatorEvents[Event]) => void;
 
     _index: number;
 }
