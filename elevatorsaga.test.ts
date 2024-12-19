@@ -321,5 +321,4 @@ describe("Passing floor:", () => {
     // TODO: Test for: If on the way up down pressed floor, then set destination
     // TODO: Test for when both indicators switch to single indicator
     // TODO: Elevators sometimes reach their destination but another elevator already picked all people up
-    // TODO: Floor buttons are not pressed again by new passengers if the button is already pressed
 });
