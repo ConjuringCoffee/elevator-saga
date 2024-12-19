@@ -19,6 +19,23 @@
                 }
             };
 
+            const getClosestPressedFloor = () => {
+                const pressedFloors = elevator.getPressedFloors();
+
+                var closestFloor = 999999999;
+                var closestDistance = 999999999;
+
+                pressedFloors.forEach((pressedFloor) => {
+                    const distance = Math.abs(elevator.currentFloor() - pressedFloor);
+                    if (distance < closestDistance) {
+                        closestFloor = pressedFloor;
+                        closestDistance = distance;
+                    }
+                });
+
+                return closestFloor;
+            }
+
             elevator._index = index;
 
             elevator.on("stopped_at_floor", (floorNumber) => {
@@ -26,7 +43,7 @@
 
                 const pressedFloors = elevator.getPressedFloors();
                 if (pressedFloors.length > 0) {
-                    setDestination(pressedFloors[0]);
+                    setDestination(getClosestPressedFloor());
                 } else {
                     elevator.goingUpIndicator(true);
                     elevator.goingDownIndicator(true);
