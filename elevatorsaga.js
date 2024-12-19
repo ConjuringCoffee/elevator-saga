@@ -2,10 +2,14 @@
 /** @type {Game} */
 ({
     init: function (elevators, floors) {
+        const setElevatorDestination = (/** @type {Elevator} */ elevator, /** @type {number} */ floorNumber) => {
+            elevator.destinationQueue.push(floorNumber);
+            elevator.checkDestinationQueue();
+        }
+
         elevators.forEach((elevator, index) => {
             const setDestination = (/** @type {number} */ floorNumber) => {
-                elevator.destinationQueue.push(floorNumber);
-                elevator.checkDestinationQueue();
+                setElevatorDestination(elevator, floorNumber);
             };
 
             const setUpDownIndicatorsByDestination = () => {
@@ -47,7 +51,7 @@
                     }
                 });
 
-                if (closestFloorNumber === undefined) {
+                if (closestFloorNumber == undefined) {
                     throw new Error("Failed to get closest floor");
                 }
 
@@ -107,17 +111,68 @@
         });
 
         floors.forEach((floor) => {
+            const getIdleElevators = () => {
+                return elevators.filter((elevator) => {
+                    const elevatorFloor = floors[elevator.currentFloor()];
+                    return elevator.destinationDirection() === 'stopped'
+                        && elevator.destinationQueue.length === 0
+                        && !elevatorFloor._upRequestPending
+                        && !elevatorFloor._downRequestPending
+                });
+            };
+
+            const getClosestElevator = (/** @type {Elevator[]} */ availableElevators) => {
+                var closestElevator;
+                var closestDistance = 999999999;
+
+                availableElevators.forEach((availableElevator) => {
+                    const distance = Math.abs(availableElevator.currentFloor() - floor.floorNum());
+                    if (distance < closestDistance) {
+                        closestElevator = availableElevator;
+                        closestDistance = distance;
+                    }
+                });
+
+                if (closestElevator === undefined) {
+                    throw new Error("Failed to get closest elevator");
+                }
+
+                return closestElevator;
+            }
+
             floor._downRequestPending = false;
             floor._upRequestPending = false;
 
             floor.on("up_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Up button was pressed`);
                 floor._upRequestPending = true;
+
+                const idleElevators = getIdleElevators();
+
+                if (idleElevators.length > 0) {
+                    const closestElevator = getClosestElevator(idleElevators);
+                    setElevatorDestination(closestElevator, floor.floorNum());
+                    // @ts-ignore // TODO
+                    closestElevator.goingUpIndicator(true);
+                    // @ts-ignore // TODO
+                    closestElevator.goingDownIndicator(false);
+                }
             });
 
             floor.on("down_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Down button was pressed`);
                 floor._downRequestPending = true;
+
+                const idleElevators = getIdleElevators();
+
+                if (idleElevators.length > 0) {
+                    const closestElevator = getClosestElevator(idleElevators);
+                    setElevatorDestination(closestElevator, floor.floorNum());
+                    // @ts-ignore // TODO
+                    closestElevator.goingUpIndicator(false);
+                    // @ts-ignore // TODO
+                    closestElevator.goingDownIndicator(true);
+                }
             });
         });
     },

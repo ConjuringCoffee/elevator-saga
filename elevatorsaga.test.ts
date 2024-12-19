@@ -8,7 +8,7 @@ interface MockElevator extends Elevator {
     trigger: <Event extends keyof ElevatorEvents>(type: Event, ...args: Parameters<ElevatorEvents[Event]>) => void;
 }
 
-interface MockFloor extends Partial<Floor> {
+interface MockFloor extends Floor {
     handlers: { [K in keyof FloorEvents]?: FloorEvents[K] };
     trigger: <Event extends keyof FloorEvents>(type: Event, ...args: Parameters<FloorEvents[Event]>) => void;
 }
@@ -97,6 +97,8 @@ beforeEach(() => {
 
     const createFloor = (floorNumber: number): MockFloor => {
         return {
+            _upRequestPending: false,
+            _downRequestPending: false,
             floorNum: () => floorNumber,
             handlers: {},
             on(type, handler) {
@@ -129,14 +131,13 @@ test('All requests on floors are false in the beginning', () => {
     });
 });
 
-describe("Button requests on floors:", () => {
+describe("Up / down button requests on floors:", () => {
     var floor: MockFloor;
 
     beforeEach(() => {
-        elevators.forEach((elevator) => {
-            elevator.currentFloorValue = 1;
-        });
-        floor = floors[0];
+        elevators[0].currentFloorValue = 2;
+        elevators[1].currentFloorValue = 1;
+        floor = floors[1];
     });
 
     describe('If no elevator is stopped on the same floor:', () => {
@@ -149,6 +150,14 @@ describe("Button requests on floors:", () => {
             floor.trigger('down_button_pressed');
             expect(floor._downRequestPending).toBe(true);
         });
+
+        test('If an elevator is waiting, move it to the floor', () => {
+            floor.trigger('up_button_pressed');
+            const elevator = elevators[0];
+
+            expectDestinationQueueToBe(elevator, [floor.floorNum()]);
+            expectOnlyUpIndicator(elevator);
+        })
     });
 });
 
