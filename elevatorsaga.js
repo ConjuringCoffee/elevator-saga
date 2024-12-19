@@ -16,6 +16,21 @@
                 setElevatorDestination(elevator, floorNumber);
             };
 
+            const setBothUpDownIndicators = () => {
+                elevator.goingUpIndicator(true);
+                elevator.goingDownIndicator(true);
+            };
+
+            const setUpDownIndicatorsForUp = () => {
+                elevator.goingUpIndicator(true);
+                elevator.goingDownIndicator(false);
+            };
+
+            const setUpDownIndicatorsForDown = () => {
+                elevator.goingUpIndicator(false);
+                elevator.goingDownIndicator(true);
+            }
+
             const setUpDownIndicatorsByDestination = () => {
                 const nextDestination = elevator.destinationQueue[0];
 
@@ -26,11 +41,9 @@
                 const distance = nextDestination - elevator.currentFloor();
 
                 if (distance > 0) {
-                    elevator.goingUpIndicator(true);
-                    elevator.goingDownIndicator(false);
+                    setUpDownIndicatorsForUp();
                 } else if (distance < 0) {
-                    elevator.goingUpIndicator(false);
-                    elevator.goingDownIndicator(true);
+                    setUpDownIndicatorsForDown();
                 } else {
                     throw new Error('The elevator is already on the destination');
                 }
@@ -63,29 +76,56 @@
             }
 
             const getFloorsWithRequest = () => {
-                return floors.filter((floor) => floor._downRequestPending === true || floor._upRequestPending);
+                return floors.filter((floor) => floor._downRequestPending || floor._upRequestPending);
             }
 
             elevator._index = index;
+            elevator._lastUpdatedLoadFactor = 0;
+            elevator._estimatedPassengerCount = 0;
 
-            elevator.on("stopped_at_floor", (floorNumber) => {
-                console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumber}`);
+            elevator._estimatePassengerCount = () => {
+                const loadFactor = elevator.loadFactor();
+                if (loadFactor === 0) {
+                    // Reset to zero. Nobody is on this elevator
+                    elevator._estimatedPassengerCount = 0;
+                } else if (elevator._lastUpdatedLoadFactor < loadFactor && elevator._estimatedPassengerCount < elevator.maxPassengerCount()) {
+                    elevator._estimatedPassengerCount += 1;
+                } else if (elevator._lastUpdatedLoadFactor > loadFactor && elevator._estimatedPassengerCount > 1) {
+                    elevator._estimatedPassengerCount -= 1;
+                }
+                elevator._lastUpdatedLoadFactor = loadFactor;
+            }
+
+            elevator.on("stopped_at_floor", (floorNumberStopped) => {
+                console.debug(`\nElevator ${elevator._index}: Stopped at floor ${floorNumberStopped}`);
+
+                elevator._estimatePassengerCount();
 
                 if (elevator.getPressedFloors().length > 0) {
                     setDestination(getClosestPressedFloor());
                     setUpDownIndicatorsByDestination();
                 } else {
-                    elevator.goingUpIndicator(true);
-                    elevator.goingDownIndicator(true);
+                    setBothUpDownIndicators();
 
                     const floorsWithRequest = getFloorsWithRequest();
                     const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
 
-                    if (!floorNumbersWithRequest.includes(floorNumber)) {
+                    if (!floorNumbersWithRequest.includes(floorNumberStopped)) {
                         if (floorNumbersWithRequest.length > 0) {
                             const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
                             setDestination(closestFloorNumber);
                         }
+                    }
+                }
+
+                if (elevator.destinationQueue.length > 0) {
+                    // Clear requests in case the floor button was already pressed by a previous passenger
+                    if (elevator.destinationQueue[0] > floorNumberStopped) {
+                        floors[floorNumberStopped]._upRequestPending = false;
+                    } else if (elevator.destinationQueue[0] < floorNumberStopped) {
+                        floors[floorNumberStopped]._downRequestPending = false;
+                    } else {
+                        throw new Error('The next destination should not be the current floor');
                     }
                 }
 
@@ -111,6 +151,23 @@
                     setUpDownIndicatorsByDestination();
                 }
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
+            });
+
+            elevator.on("passing_floor", (floorNumberPassing, direction) => {
+                console.debug(`\nElevator ${elevator._index}: Floor ${floorNumberPassing} is being passed`);
+
+                if (elevator._estimatedPassengerCount < elevator.maxPassengerCount() && elevator.loadFactor() < 1) {
+                    const floorPassing = floors[floorNumberPassing];
+                    if (direction === "up" && floorPassing._upRequestPending) {
+                        setDestination(floorNumberPassing);
+                        setUpDownIndicatorsForUp();
+                        floorPassing._upRequestPending = false;
+                    } else if (direction === "down" && floorPassing._downRequestPending) {
+                        setDestination(floorNumberPassing);
+                        setUpDownIndicatorsForDown();
+                        floorPassing._downRequestPending = false;
+                    }
+                }
             });
         });
 
@@ -182,7 +239,18 @@
     },
 
     update: function (dt, elevators, floors) {
-        // Do nothing for now
+        // console.debug("\nUpdate:");
+        elevators.forEach((elevator) => {
+            elevator._estimatePassengerCount();
+        });
+        // floors.forEach((floor) => {
+        //     if (floor._upRequestPending) {
+        //         console.debug(`Floor ${floor.floorNum()} has up request`);
+        //     }
+        //     if (floor._downRequestPending) {
+        //         console.debug(`Floor ${floor.floorNum()} has down request`);
+        //     }
+        // })
     },
 
 })
