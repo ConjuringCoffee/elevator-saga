@@ -111,5 +111,12 @@ describe("Button requests on floors:", () => {
 
             expect(mockFloor._upRequestPending).toBe(false);
         });
+
+        test('Down button request is remembered', () => {
+            const mockFloor = mockFloors[0];
+            mockFloor.trigger('down_button_pressed');
+
+            expect(mockFloor._downRequestPending).toBe(false);
+        });
     });
 });

@@ -11,6 +11,10 @@
 
         elevators.forEach((elevator, index) => {
             elevator._index = index;
+
+            elevator.on("stopped_at_floor", (floorNumber) => {
+                console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumber}`);
+            });
         });
 
         floors.forEach((floor) => {
@@ -18,7 +22,7 @@
             floor._upRequestPending = false;
 
             floor.on("up_button_pressed", () => {
-                console.debug(`\n Floor ${floor.floorNum()}: Up button was pressed`);
+                console.debug(`\nFloor ${floor.floorNum()}: Up button was pressed`);
 
                 if (!isAnyElevatorStoppedOnFloor(floor)) {
                     floor._upRequestPending = true;
@@ -26,8 +30,11 @@
             });
 
             floor.on("down_button_pressed", () => {
-                console.debug(`\n Floor ${floor.floorNum()}: Down button was pressed`);
-                floor._downRequestPending = true;
+                console.debug(`\nFloor ${floor.floorNum()}: Down button was pressed`);
+
+                if (!isAnyElevatorStoppedOnFloor(floor)) {
+                    floor._downRequestPending = true;
+                }
             });
         });
     },
