@@ -1,4 +1,6 @@
 interface MockElevator extends Partial<Elevator> {
+    currentFloorValue: number;
+    destinationDirectionValue: "up" | "down" | "stopped";
     handlers: { [K in keyof ElevatorEvents]?: ElevatorEvents[K] };
     trigger: <Event extends keyof ElevatorEvents>(type: Event, ...args: Parameters<ElevatorEvents[Event]>) => void;
 }
@@ -18,7 +20,15 @@ var game: Game;
 beforeEach(() => {
     const createElevator = (): MockElevator => {
         return {
+            currentFloorValue: 0,
+            destinationDirectionValue: "stopped",
             handlers: {},
+            currentFloor() {
+                return this.currentFloorValue;
+            },
+            destinationDirection() {
+                return this.destinationDirectionValue;
+            },
             on(type, handler) {
                 this.handlers[type] = handler;
             },
@@ -46,11 +56,11 @@ beforeEach(() => {
     };
 
     mockElevators = [createElevator(), createElevator()];
-    mockFloors = [createFloor(0), createFloor(1)];
+    mockFloors = [createFloor(0), createFloor(1), createFloor(2)];
 
     game = eval(data);
     game.init(mockElevators as Elevator[], mockFloors as Floor[]);
-})
+});
 
 test('All elevators get assigned to an index', () => {
     expect(mockElevators[0]._index).toBe(0);
@@ -61,19 +71,45 @@ test('All requests on floors are false in the beginning', () => {
     mockFloors.forEach((mockFloor) => {
         expect(mockFloor._upRequestPending).toBe(false);
         expect(mockFloor._downRequestPending).toBe(false);
+    });
+});
+
+describe("Button requests on floors:", () => {
+    beforeEach(() => {
+        mockElevators.forEach((mockElevator) => {
+            mockElevator.currentFloorValue = 1;
+        })
+    });
+
+    describe('If no elevator is stopped on the same floor:', () => {
+        test('Up button request is remembered', () => {
+            const mockFloor = mockFloors[0];
+            mockFloor.trigger('up_button_pressed');
+
+            expect(mockFloor._upRequestPending).toBe(true);
+        });
+
+        test('Down button request is remembered', () => {
+            const mockFloor = mockFloors[0];
+            mockFloor.trigger('down_button_pressed');
+
+            expect(mockFloor._downRequestPending).toBe(true);
+        });
     })
-})
 
-test('Up button request on floor is remembered', () => {
-    const mockFloor = mockFloors[0];
-    mockFloor.trigger('up_button_pressed');
 
-    expect(mockFloor._upRequestPending).toBe(true);
-})
+    describe('If an elevator is stopped on the same floor:', () => {
+        beforeEach(() => {
+            const mockElevator = mockElevators[0];
+            mockElevator.currentFloorValue = 0;
+            mockElevator.destinationDirectionValue = 'stopped';
+        });
 
-test('Down button request on floor is remembered', () => {
-    const mockFloor = mockFloors[0];
-    mockFloor.trigger('down_button_pressed');
+        test('Up button request is remembered', () => {
+            const mockFloor = mockFloors[0];
+            mockFloor.trigger('up_button_pressed');
 
-    expect(mockFloor._downRequestPending).toBe(true);
-})
+            expect(mockFloor._upRequestPending).toBe(false);
+        });
+    });
+});
