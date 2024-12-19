@@ -6,8 +6,17 @@
             const setDestination = (/** @type {number} */ floorNumber) => {
                 elevator.destinationQueue.push(floorNumber);
                 elevator.checkDestinationQueue();
+            };
 
-                const distance = floorNumber - elevator.currentFloor();
+            const setUpDownIndicatorsByDestination = () => {
+                const nextDestination = elevator.destinationQueue[0];
+
+                if (nextDestination === undefined) {
+                    throw new Error("There is no next destination");
+                }
+
+                const distance = nextDestination - elevator.currentFloor();
+
                 if (distance > 0) {
                     elevator.goingUpIndicator(true);
                     elevator.goingDownIndicator(false);
@@ -17,23 +26,36 @@
                 } else {
                     throw new Error('The elevator is already on the destination');
                 }
-            };
+            }
 
             const getClosestPressedFloor = () => {
                 const pressedFloors = elevator.getPressedFloors();
+                return getClosestFloorNumber(pressedFloors);
+            }
 
-                var closestFloor = 999999999;
+            const getClosestFloorNumber = (/** @type {number[]} */ floorNumbers) => {
+                var closestFloorNumber;
                 var closestDistance = 999999999;
 
-                pressedFloors.forEach((pressedFloor) => {
-                    const distance = Math.abs(elevator.currentFloor() - pressedFloor);
+                const currentFloor = elevator.currentFloor();
+
+                floorNumbers.forEach((floorNumber) => {
+                    const distance = Math.abs(currentFloor - floorNumber);
                     if (distance < closestDistance) {
-                        closestFloor = pressedFloor;
+                        closestFloorNumber = floorNumber;
                         closestDistance = distance;
                     }
                 });
 
-                return closestFloor;
+                if (closestFloorNumber === undefined) {
+                    throw new Error("Failed to get closest floor");
+                }
+
+                return closestFloorNumber;
+            }
+
+            const getFloorsWithRequest = () => {
+                return floors.filter((floor) => floor._downRequestPending === true || floor._upRequestPending);
             }
 
             elevator._index = index;
@@ -41,22 +63,43 @@
             elevator.on("stopped_at_floor", (floorNumber) => {
                 console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumber}`);
 
-                const pressedFloors = elevator.getPressedFloors();
-                if (pressedFloors.length > 0) {
+                if (elevator.getPressedFloors().length > 0) {
                     setDestination(getClosestPressedFloor());
+                    setUpDownIndicatorsByDestination();
                 } else {
                     elevator.goingUpIndicator(true);
                     elevator.goingDownIndicator(true);
+
+                    const floorsWithRequest = getFloorsWithRequest();
+                    const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
+
+                    if (!floorNumbersWithRequest.includes(floorNumber)) {
+                        if (floorNumbersWithRequest.length > 0) {
+                            const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
+                            setDestination(closestFloorNumber);
+                        }
+                    }
                 }
 
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
             });
 
-            elevator.on("floor_button_pressed", (floorNumber) => {
-                console.debug(`\nElevator ${elevator._index}: Button for floor ${floorNumber} was pressed`);
+            elevator.on("floor_button_pressed", (floorNumberPressed) => {
+                console.debug(`\nElevator ${elevator._index}: Button for floor ${floorNumberPressed} was pressed`);
+
+                const floor = floors[elevator.currentFloor()];
+
+                if (floorNumberPressed > elevator.currentFloor()) {
+                    floor._upRequestPending = false;
+                } else if (floorNumberPressed < elevator.currentFloor()) {
+                    floor._downRequestPending = false;
+                } else {
+                    throw new Error('A button was pressed for the current floor');
+                }
 
                 if (elevator.destinationQueue.length === 0) {
-                    setDestination(floorNumber);
+                    setDestination(floorNumberPressed);
+                    setUpDownIndicatorsByDestination();
                 }
 
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
@@ -64,30 +107,17 @@
         });
 
         floors.forEach((floor) => {
-            const isAnyElevatorStoppedOnFloor = () => {
-                return elevators.some((elevator) => {
-                    return floor.floorNum() === elevator.currentFloor()
-                        && elevator.destinationDirection() === 'stopped';
-                });
-            };
-
             floor._downRequestPending = false;
             floor._upRequestPending = false;
 
             floor.on("up_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Up button was pressed`);
-
-                if (!isAnyElevatorStoppedOnFloor()) {
-                    floor._upRequestPending = true;
-                }
+                floor._upRequestPending = true;
             });
 
             floor.on("down_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Down button was pressed`);
-
-                if (!isAnyElevatorStoppedOnFloor()) {
-                    floor._downRequestPending = true;
-                }
+                floor._downRequestPending = true;
             });
         });
     },
