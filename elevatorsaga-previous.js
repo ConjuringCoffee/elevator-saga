@@ -14,7 +14,7 @@
             var bestDistance = 99999999999;
 
             const setBestIfCurrentDistanceIsBest = (/** @type {Elevator} */ elevator) => {
-                const distance = Math.floor(elevator.currentFloor() - floorNumber);
+                const distance = Math.abs(elevator.currentFloor() - floorNumber);
                 if (distance < bestDistance) {
                     bestElevator = elevator;
                     bestDistance = distance;
@@ -25,7 +25,7 @@
                 var shortestFutureDistance = 99999999999;
 
                 elevator.destinationQueue.forEach((destination) => {
-                    const distance = Math.floor(destination - floorNumber);
+                    const distance = Math.abs(destination - floorNumber);
 
                     if (distance < shortestFutureDistance) {
                         shortestFutureDistance = distance;
