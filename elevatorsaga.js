@@ -80,6 +80,8 @@
             }
 
             elevator._index = index;
+            elevator._lastUpdatedLoadFactor = 0;
+            elevator._estimatedPassengerCount = 0;
 
             elevator.on("stopped_at_floor", (floorNumberStopped) => {
                 console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumberStopped}`);
@@ -217,7 +219,16 @@
     },
 
     update: function (dt, elevators, floors) {
-        // console.debug("\nUpdate:");
+        console.debug("\nUpdate:");
+        elevators.forEach((elevator) => {
+            const loadFactor = elevator.loadFactor();
+            if (elevator._lastUpdatedLoadFactor < loadFactor) {
+                elevator._estimatedPassengerCount += 1;
+            } else if (elevator._lastUpdatedLoadFactor > loadFactor) {
+                elevator._estimatedPassengerCount -= 1;
+            }
+            elevator._lastUpdatedLoadFactor = loadFactor;
+        });
         // floors.forEach((floor) => {
         //     if (floor._upRequestPending) {
         //         console.debug(`Floor ${floor.floorNum()} has up request`);

@@ -78,6 +78,8 @@ interface Elevator {
     on: <Event extends keyof ElevatorEvents>(type: Event, handler: ElevatorEvents[Event]) => void;
 
     _index: number;
+    _lastUpdatedLoadFactor: number;
+    _estimatedPassengerCount: number;
 }
 
 interface FloorEvents {

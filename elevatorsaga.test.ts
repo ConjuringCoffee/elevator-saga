@@ -5,6 +5,8 @@ interface MockElevator extends Elevator {
     handlers: { [K in keyof ElevatorEvents]?: ElevatorEvents[K] };
     goingUpIndicatorValue: boolean;
     goingDownIndicatorValue: boolean;
+    maxPassengerCountValue: number;
+    loadFactorValue: number;
     trigger: <Event extends keyof ElevatorEvents>(type: Event, ...args: Parameters<ElevatorEvents[Event]>) => void;
 }
 
@@ -43,6 +45,10 @@ beforeEach(() => {
     const createElevator = (): MockElevator => {
         return {
             _index: 0,
+            _lastUpdatedLoadFactor: 0,
+            _estimatedPassengerCount: 0,
+            maxPassengerCountValue: 0,
+            loadFactorValue: 0,
             currentFloorValue: 0,
             destinationDirectionValue: "stopped",
             destinationQueue: [],
@@ -86,11 +92,11 @@ beforeEach(() => {
             stop() {
                 throw new Error("Not implemented yet");
             },
-            maxPassengerCount: () => {
-                throw new Error("Not implemented yet");
+            maxPassengerCount() {
+                return this.maxPassengerCountValue;
             },
-            loadFactor: () => {
-                throw new Error("Not implemented yet");
+            loadFactor() {
+                return this.loadFactorValue;
             },
         }
     }
@@ -123,6 +129,14 @@ test('All elevators get assigned to an index', () => {
     expect(elevators[0]._index).toBe(0);
     expect(elevators[1]._index).toBe(1);
 });
+
+test('All elevators have an initial load factor of zero', () => {
+    elevators.forEach((elevator) => {
+        expect(elevator._lastUpdatedLoadFactor).toBe(0);
+        expect(elevator.loadFactor()).toBe(0);
+        expect(elevator._estimatedPassengerCount).toBe(0);
+    })
+})
 
 test('All requests on floors are false in the beginning', () => {
     floors.forEach((floor) => {
