@@ -1,20 +1,46 @@
+interface MockElevator extends Partial<Elevator> {
+    handlers: { [K in keyof ElevatorEvents]?: ElevatorEvents[K] };
+    trigger: <Event extends keyof ElevatorEvents>(type: Event, ...args: Parameters<ElevatorEvents[Event]>) => void;
+}
+
+interface MockFloor extends Partial<Floor> {
+    handlers: { [K in keyof FloorEvents]?: FloorEvents[K] };
+    trigger: <Event extends keyof FloorEvents>(type: Event, ...args: Parameters<FloorEvents[Event]>) => void;
+}
+
 const fs = require('fs');
 const data = fs.readFileSync('./elevatorsaga.js', 'utf8');
 
-var mockElevators: Array<Partial<Elevator>> = [];
-var mockFloors: Array<Partial<Floor>> = [];
+var mockElevators: Array<MockElevator> = [];
+var mockFloors: Array<MockFloor> = [];
 
 beforeEach(() => {
-    const createElevator = () => {
+    const createElevator = (): MockElevator => {
         return {
-            on: () => { },
-        };
+            handlers: {},
+            on(type, handler) {
+                this.handlers[type] = handler;
+            },
+            trigger(type, ...args) {
+                if (this.handlers[type]) {
+                    (this.handlers[type] as any)(...args);
+                }
+            }
+        }
     }
 
-    const createFloor = (floorNumber: number) => {
+    const createFloor = (floorNumber: number): MockFloor => {
         return {
             floorNum: () => floorNumber,
-            on: () => { }
+            handlers: {},
+            on(type, handler) {
+                this.handlers[type] = handler;
+            },
+            trigger(type, ...args) {
+                if (this.handlers[type]) {
+                    (this.handlers[type] as any)(...args);
+                }
+            }
         };
     };
 
