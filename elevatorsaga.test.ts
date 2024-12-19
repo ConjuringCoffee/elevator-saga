@@ -13,6 +13,7 @@ const data = fs.readFileSync('./elevatorsaga.js', 'utf8');
 
 var mockElevators: Array<MockElevator> = [];
 var mockFloors: Array<MockFloor> = [];
+var game: Game;
 
 beforeEach(() => {
     const createElevator = (): MockElevator => {
@@ -46,12 +47,33 @@ beforeEach(() => {
 
     mockElevators = [createElevator(), createElevator()];
     mockFloors = [createFloor(0), createFloor(1)];
+
+    game = eval(data);
+    game.init(mockElevators as Elevator[], mockFloors as Floor[]);
 })
 
 test('All elevators get assigned to an index', () => {
-    const game = eval(data);
-    game.init(mockElevators, mockFloors);
-
     expect(mockElevators[0]._index).toBe(0);
     expect(mockElevators[1]._index).toBe(1);
 });
+
+test('All requests on floors are false in the beginning', () => {
+    mockFloors.forEach((mockFloor) => {
+        expect(mockFloor._upRequestPending).toBe(false);
+        expect(mockFloor._downRequestPending).toBe(false);
+    })
+})
+
+test('Up button request on floor is remembered', () => {
+    const mockFloor = mockFloors[0];
+    mockFloor.trigger('up_button_pressed');
+
+    expect(mockFloor._upRequestPending).toBe(true);
+})
+
+test('Down button request on floor is remembered', () => {
+    const mockFloor = mockFloors[0];
+    mockFloor.trigger('down_button_pressed');
+
+    expect(mockFloor._downRequestPending).toBe(true);
+})
