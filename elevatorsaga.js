@@ -27,6 +27,9 @@
                 const pressedFloors = elevator.getPressedFloors();
                 if (pressedFloors.length > 0) {
                     setDestination(pressedFloors[0]);
+                } else {
+                    elevator.goingUpIndicator(true);
+                    elevator.goingDownIndicator(true);
                 }
 
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());

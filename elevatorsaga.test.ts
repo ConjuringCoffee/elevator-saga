@@ -183,13 +183,23 @@ describe("Floor button presses:", () => {
 });
 
 describe("Elevator stops:", () => {
+    var elevator: MockElevator;
+    beforeEach(() => {
+        elevator = elevators[0];
+        elevator.goingDownIndicatorValue = true;
+        elevator.goingUpIndicatorValue = false;
+    })
     test("If one floor button is already pressed, go to there next", () => {
-        const elevator = elevators[0];
         elevator.pressedFloors = [2];
         elevator.trigger("stopped_at_floor", 0);
 
         expectDestinationQueueToBe(elevator, [2]);
         expect(elevator.checkDestinationQueue).toHaveBeenCalled();
         expectOnlyUpIndicator(elevator);
+    });
+
+    test("If no floor button is pressed, turn on up and down indicators", () => {
+        elevator.trigger("stopped_at_floor", 0);
+        expectUpAndDownIndicators(elevator);
     });
 })
