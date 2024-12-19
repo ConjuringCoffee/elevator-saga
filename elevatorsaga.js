@@ -16,6 +16,21 @@
                 setElevatorDestination(elevator, floorNumber);
             };
 
+            const setBothUpDownIndicators = () => {
+                elevator.goingUpIndicator(true);
+                elevator.goingDownIndicator(true);
+            };
+
+            const setUpDownIndicatorsForUp = () => {
+                elevator.goingUpIndicator(true);
+                elevator.goingDownIndicator(false);
+            };
+
+            const setUpDownIndicatorsForDown = () => {
+                elevator.goingUpIndicator(false);
+                elevator.goingDownIndicator(true);
+            }
+
             const setUpDownIndicatorsByDestination = () => {
                 const nextDestination = elevator.destinationQueue[0];
 
@@ -26,11 +41,9 @@
                 const distance = nextDestination - elevator.currentFloor();
 
                 if (distance > 0) {
-                    elevator.goingUpIndicator(true);
-                    elevator.goingDownIndicator(false);
+                    setUpDownIndicatorsForUp();
                 } else if (distance < 0) {
-                    elevator.goingUpIndicator(false);
-                    elevator.goingDownIndicator(true);
+                    setUpDownIndicatorsForDown();
                 } else {
                     throw new Error('The elevator is already on the destination');
                 }
@@ -75,8 +88,7 @@
                     setDestination(getClosestPressedFloor());
                     setUpDownIndicatorsByDestination();
                 } else {
-                    elevator.goingUpIndicator(true);
-                    elevator.goingDownIndicator(true);
+                    setBothUpDownIndicators();
 
                     const floorsWithRequest = getFloorsWithRequest();
                     const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
@@ -111,6 +123,18 @@
                     setUpDownIndicatorsByDestination();
                 }
                 console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
+            });
+
+            elevator.on("passing_floor", (floorNumberPassing, direction) => {
+                console.debug(`\nElevator ${elevator._index}: Floor ${floorNumberPassing} is being passed`);
+
+                if (direction === "up" && floors[floorNumberPassing]._upRequestPending) {
+                    setDestination(floorNumberPassing);
+                    setUpDownIndicatorsForUp();
+                } else if (direction === "down" && floors[floorNumberPassing]._downRequestPending) {
+                    setDestination(floorNumberPassing);
+                    setUpDownIndicatorsForDown();
+                }
             });
         });
 

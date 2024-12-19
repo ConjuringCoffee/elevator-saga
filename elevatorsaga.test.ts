@@ -215,13 +215,15 @@ describe("Floor button presses:", () => {
 
 describe("Elevator stopped:", () => {
     var elevator: MockElevator;
+
     beforeEach(() => {
         // The elevator drives to floor 1 and stops there
         elevator = elevators[0];
         elevator.currentFloorValue = 1;
         elevator.goingDownIndicatorValue = true;
         elevator.goingUpIndicatorValue = true;
-    })
+    });
+
     test("If floor buttons are already pressed, go to the nearest next", () => {
         elevator.pressedFloors = [3, 2];
         elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
@@ -258,4 +260,28 @@ describe("Elevator stopped:", () => {
             expectUpAndDownIndicators(elevator);
         })
     })
-})
+});
+
+describe("Passing floor:", () => {
+    var elevator: MockElevator;
+
+    beforeEach(() => {
+        elevator = elevators[0];
+    });
+
+    test("If on the way up to pressed floor, then set destination", () => {
+        elevator.pressedFloors = [3];
+        elevator.destinationQueue = [3];
+        elevator.destinationDirectionValue = 'up';
+
+        const floor = floors[1];
+        floor._upRequestPending = true;
+
+        elevator.trigger("passing_floor", floor.floorNum(), "up");
+
+        expectDestinationQueueToBe(elevator, [1]);
+        expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+    });
+    // TODO: Test for: If on the way up down pressed floor, then set destination
+    // TODO: Test for when both indicators switch to single indicator
+});
