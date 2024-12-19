@@ -35,8 +35,8 @@ const expectUpAndDownIndicators = (elevator: MockElevator) => {
 const fs = require('fs');
 const data = fs.readFileSync('./elevatorsaga.js', 'utf8');
 
-var mockElevators: Array<MockElevator> = [];
-var mockFloors: Array<MockFloor> = [];
+var elevators: Array<MockElevator> = [];
+var floors: Array<MockFloor> = [];
 var game: Game;
 
 beforeEach(() => {
@@ -110,86 +110,86 @@ beforeEach(() => {
         };
     };
 
-    mockElevators = [createElevator(), createElevator()];
-    mockFloors = [createFloor(0), createFloor(1), createFloor(2)];
+    elevators = [createElevator(), createElevator()];
+    floors = [createFloor(0), createFloor(1), createFloor(2)];
 
     game = eval(data);
-    game.init(mockElevators as Elevator[], mockFloors as Floor[]);
+    game.init(elevators as Elevator[], floors as Floor[]);
 });
 
 test('All elevators get assigned to an index', () => {
-    expect(mockElevators[0]._index).toBe(0);
-    expect(mockElevators[1]._index).toBe(1);
+    expect(elevators[0]._index).toBe(0);
+    expect(elevators[1]._index).toBe(1);
 });
 
 test('All requests on floors are false in the beginning', () => {
-    mockFloors.forEach((mockFloor) => {
-        expect(mockFloor._upRequestPending).toBe(false);
-        expect(mockFloor._downRequestPending).toBe(false);
+    floors.forEach((floor) => {
+        expect(floor._upRequestPending).toBe(false);
+        expect(floor._downRequestPending).toBe(false);
     });
 });
 
 describe("Button requests on floors:", () => {
-    var mockFloor: MockFloor;
+    var floor: MockFloor;
 
     beforeEach(() => {
-        mockElevators.forEach((mockElevator) => {
-            mockElevator.currentFloorValue = 1;
+        elevators.forEach((elevator) => {
+            elevator.currentFloorValue = 1;
         });
-        mockFloor = mockFloors[0];
+        floor = floors[0];
     });
 
     describe('If no elevator is stopped on the same floor:', () => {
         test('Up button request is remembered', () => {
-            mockFloor.trigger('up_button_pressed');
-            expect(mockFloor._upRequestPending).toBe(true);
+            floor.trigger('up_button_pressed');
+            expect(floor._upRequestPending).toBe(true);
         });
 
         test('Down button request is remembered', () => {
-            mockFloor.trigger('down_button_pressed');
-            expect(mockFloor._downRequestPending).toBe(true);
+            floor.trigger('down_button_pressed');
+            expect(floor._downRequestPending).toBe(true);
         });
     })
 
 
     describe('If an elevator is stopped on the same floor:', () => {
         beforeEach(() => {
-            const mockElevator = mockElevators[0];
-            mockElevator.currentFloorValue = 0;
-            mockElevator.destinationDirectionValue = 'stopped';
+            const elevator = elevators[0];
+            elevator.currentFloorValue = 0;
+            elevator.destinationDirectionValue = 'stopped';
         });
 
         test('Up button request is remembered', () => {
-            mockFloor.trigger('up_button_pressed');
-            expect(mockFloor._upRequestPending).toBe(false);
+            floor.trigger('up_button_pressed');
+            expect(floor._upRequestPending).toBe(false);
         });
 
         test('Down button request is remembered', () => {
-            mockFloor.trigger('down_button_pressed');
-            expect(mockFloor._downRequestPending).toBe(false);
+            floor.trigger('down_button_pressed');
+            expect(floor._downRequestPending).toBe(false);
         });
     });
 });
 
 describe("Floor button presses:", () => {
     test("If destination queue is empty, go to floor", () => {
-        const mockElevator = mockElevators[0];
-        mockElevator.trigger("floor_button_pressed", 1);
+        const elevator = elevators[0];
+        elevator.trigger("floor_button_pressed", 1);
 
-        expectDestinationQueueToBe(mockElevator, [1]);
-        expect(mockElevator.checkDestinationQueue).toHaveBeenCalled();
-        expectOnlyUpIndicator(mockElevator);
+        expectDestinationQueueToBe(elevator, [1]);
+        expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+        expectOnlyUpIndicator(elevator);
     });
 });
 
 describe("Elevator stops:", () => {
     test("If one floor button is already pressed, go to there next", () => {
-        const mockElevator = mockElevators[0];
-        mockElevator.pressedFloors = [2];
-        mockElevator.trigger("stopped_at_floor", 0);
+        const elevator = elevators[0];
+        elevator.pressedFloors = [2];
+        elevator.trigger("stopped_at_floor", 0);
 
-        expectDestinationQueueToBe(mockElevator, [2]);
-        expect(mockElevator.checkDestinationQueue).toHaveBeenCalled();
-        expectOnlyUpIndicator(mockElevator);
+        expectDestinationQueueToBe(elevator, [2]);
+        expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+        expectOnlyUpIndicator(elevator);
     });
 })
