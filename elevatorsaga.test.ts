@@ -1,6 +1,7 @@
 interface MockElevator extends Partial<Elevator> {
     currentFloorValue: number;
     destinationDirectionValue: "up" | "down" | "stopped";
+    pressedFloors: number[];
     handlers: { [K in keyof ElevatorEvents]?: ElevatorEvents[K] };
     trigger: <Event extends keyof ElevatorEvents>(type: Event, ...args: Parameters<ElevatorEvents[Event]>) => void;
 }
@@ -8,6 +9,10 @@ interface MockElevator extends Partial<Elevator> {
 interface MockFloor extends Partial<Floor> {
     handlers: { [K in keyof FloorEvents]?: FloorEvents[K] };
     trigger: <Event extends keyof FloorEvents>(type: Event, ...args: Parameters<FloorEvents[Event]>) => void;
+}
+
+const expectDestinationQueueToBe = (elevator: MockElevator, expectedQueue: number[]) => {
+    expect(elevator.destinationQueue?.toString()).toBe(expectedQueue.toString());
 }
 
 const fs = require('fs');
@@ -23,6 +28,7 @@ beforeEach(() => {
             currentFloorValue: 0,
             destinationDirectionValue: "stopped",
             destinationQueue: [],
+            pressedFloors: [],
             handlers: {},
             currentFloor() {
                 return this.currentFloorValue;
@@ -38,7 +44,10 @@ beforeEach(() => {
                     (this.handlers[type] as any)(...args);
                 }
             },
-            checkDestinationQueue: jest.fn(() => { })
+            checkDestinationQueue: jest.fn(() => { }),
+            getPressedFloors() {
+                return this.pressedFloors;
+            }
         }
     }
 
@@ -123,7 +132,18 @@ describe("Floor button presses:", () => {
         const mockElevator = mockElevators[0];
         mockElevator.trigger("floor_button_pressed", 1);
 
-        expect(mockElevator.destinationQueue?.toString()).toBe([1].toString());
+        expectDestinationQueueToBe(mockElevator, [1]);
         expect(mockElevator.checkDestinationQueue).toHaveBeenCalled();
-    })
+    });
 });
+
+describe("Elevator stops:", () => {
+    test("If one floor button is already pressed, go to there next", () => {
+        const mockElevator = mockElevators[0];
+        mockElevator.pressedFloors = [2];
+        mockElevator.trigger("stopped_at_floor", 0);
+
+        expectDestinationQueueToBe(mockElevator, [2]);
+        expect(mockElevator.checkDestinationQueue).toHaveBeenCalled();
+    });
+})
