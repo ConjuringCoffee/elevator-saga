@@ -47,7 +47,10 @@ beforeEach(() => {
             _index: 0,
             _lastUpdatedLoadFactor: 0,
             _estimatedPassengerCount: 0,
-            maxPassengerCountValue: 0,
+            _estimatePassengerCount() {
+                throw new Error("No need to implement this ever");
+            },
+            maxPassengerCountValue: 4,
             loadFactorValue: 0,
             currentFloorValue: 0,
             destinationDirectionValue: "stopped",
@@ -319,20 +322,97 @@ describe("Passing floor:", () => {
         elevator = elevators[0];
     });
 
-    test("If on the way up to pressed floor, then set destination", () => {
-        elevator.pressedFloors = [3];
-        elevator.destinationQueue = [3];
-        elevator.destinationDirectionValue = 'up';
+    describe("If on the way up to pressed floor", () => {
+        var floor: MockFloor;
 
-        const floor = floors[1];
-        floor._upRequestPending = true;
+        beforeEach(() => {
+            elevator.pressedFloors = [3];
+            elevator.destinationQueue = [3];
+            elevator.destinationDirectionValue = 'up';
 
-        elevator.trigger("passing_floor", floor.floorNum(), "up");
+            floor = floors[1];
+            floor._upRequestPending = true;
+        });
 
-        expectDestinationQueueToBe(elevator, [1]);
-        expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+        test("Set floor as destination if an additional passenger fits", () => {
+            elevator._estimatedPassengerCount = elevator.maxPassengerCount() - 1;
+            elevator.trigger("passing_floor", floor.floorNum(), "up");
+
+            expectDestinationQueueToBe(elevator, [1]);
+            expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+        });
+
+        test("Also remove the up request to avoid other elevator targeting this", () => {
+            elevator.trigger("passing_floor", floor.floorNum(), "up");
+            expect(floor._upRequestPending).toBe(false);
+        });
+
+        test("Do not set floor as destination if no additional passenger fits", () => {
+            elevator._estimatedPassengerCount = elevator.maxPassengerCount();
+            elevator.trigger("passing_floor", floor.floorNum(), "up");
+
+            expectDestinationQueueToBe(elevator, [3]);
+            expect(elevator.checkDestinationQueue).toHaveBeenCalledTimes(0);
+        });
+
+        test("Do not set floor as destination if load factor is one", () => {
+            elevator._estimatedPassengerCount = 2;
+            elevator.loadFactorValue = 1;
+            elevator.trigger("passing_floor", floor.floorNum(), "up");
+
+            expectDestinationQueueToBe(elevator, [3]);
+            expect(elevator.checkDestinationQueue).toHaveBeenCalledTimes(0);
+        });
     });
-    // TODO: Test for: If on the way up down pressed floor, then set destination
+
+    // TODO: Test for: If on the way down pressed floor, then set destination
     // TODO: Test for when both indicators switch to single indicator
     // TODO: Elevators sometimes reach their destination but another elevator already picked all people up
+});
+
+test("Increasing load factor increments estimated passenger count", () => {
+    const elevator = elevators[0];
+    elevator._lastUpdatedLoadFactor = 0.2;
+    elevator.loadFactorValue = 0.5;
+
+    game.update(1, elevators, floors);
+
+    expect(elevator._estimatedPassengerCount).toBe(1);
+    expect(elevator._lastUpdatedLoadFactor).toBe(0.5);
+});
+
+test("Decreasing load factor decrements estimated passenger count", () => {
+    const elevator = elevators[0];
+    elevator._lastUpdatedLoadFactor = 0.5;
+    elevator.loadFactorValue = 0.2;
+    elevator._estimatedPassengerCount = 2;
+
+    game.update(1, elevators, floors);
+
+    expect(elevator._estimatedPassengerCount).toBe(1);
+    expect(elevator._lastUpdatedLoadFactor).toBe(0.2);
+});
+
+test("Estimated passenger count does not exceed maximum passenger count", () => {
+    const elevator = elevators[0];
+    elevator._lastUpdatedLoadFactor = 0.2;
+    elevator.loadFactorValue = 0.5;
+    elevator._estimatedPassengerCount = 4;
+
+    game.update(1, elevators, floors);
+
+    expect(elevator._estimatedPassengerCount).toBe(4);
+    expect(elevator._lastUpdatedLoadFactor).toBe(0.5);
+});
+
+test("Estimated passenger count is over zero if load factor is over zero", () => {
+    const elevator = elevators[0];
+    elevator._lastUpdatedLoadFactor = 0.2;
+    elevator.loadFactorValue = 0.1;
+    elevator._estimatedPassengerCount = 1;
+
+    game.update(1, elevators, floors);
+
+    expect(elevator._estimatedPassengerCount).toBe(1);
+    expect(elevator._lastUpdatedLoadFactor).toBe(0.1);
 });

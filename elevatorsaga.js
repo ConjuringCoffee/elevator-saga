@@ -83,8 +83,23 @@
             elevator._lastUpdatedLoadFactor = 0;
             elevator._estimatedPassengerCount = 0;
 
+            elevator._estimatePassengerCount = () => {
+                const loadFactor = elevator.loadFactor();
+                if (loadFactor === 0) {
+                    // Reset to zero. Nobody is on this elevator
+                    elevator._estimatedPassengerCount = 0;
+                } else if (elevator._lastUpdatedLoadFactor < loadFactor && elevator._estimatedPassengerCount < elevator.maxPassengerCount()) {
+                    elevator._estimatedPassengerCount += 1;
+                } else if (elevator._lastUpdatedLoadFactor > loadFactor && elevator._estimatedPassengerCount > 1) {
+                    elevator._estimatedPassengerCount -= 1;
+                }
+                elevator._lastUpdatedLoadFactor = loadFactor;
+            }
+
             elevator.on("stopped_at_floor", (floorNumberStopped) => {
-                console.debug(`\nElevator ${elevator._index}: Stopped on floor ${floorNumberStopped}`);
+                console.debug(`\nElevator ${elevator._index}: Stopped at floor ${floorNumberStopped}`);
+
+                elevator._estimatePassengerCount();
 
                 if (elevator.getPressedFloors().length > 0) {
                     setDestination(getClosestPressedFloor());
@@ -141,12 +156,17 @@
             elevator.on("passing_floor", (floorNumberPassing, direction) => {
                 console.debug(`\nElevator ${elevator._index}: Floor ${floorNumberPassing} is being passed`);
 
-                if (direction === "up" && floors[floorNumberPassing]._upRequestPending) {
-                    setDestination(floorNumberPassing);
-                    setUpDownIndicatorsForUp();
-                } else if (direction === "down" && floors[floorNumberPassing]._downRequestPending) {
-                    setDestination(floorNumberPassing);
-                    setUpDownIndicatorsForDown();
+                if (elevator._estimatedPassengerCount < elevator.maxPassengerCount() && elevator.loadFactor() < 1) {
+                    const floorPassing = floors[floorNumberPassing];
+                    if (direction === "up" && floorPassing._upRequestPending) {
+                        setDestination(floorNumberPassing);
+                        setUpDownIndicatorsForUp();
+                        floorPassing._upRequestPending = false;
+                    } else if (direction === "down" && floorPassing._downRequestPending) {
+                        setDestination(floorNumberPassing);
+                        setUpDownIndicatorsForDown();
+                        floorPassing._downRequestPending = false;
+                    }
                 }
             });
         });
@@ -219,15 +239,9 @@
     },
 
     update: function (dt, elevators, floors) {
-        console.debug("\nUpdate:");
+        // console.debug("\nUpdate:");
         elevators.forEach((elevator) => {
-            const loadFactor = elevator.loadFactor();
-            if (elevator._lastUpdatedLoadFactor < loadFactor) {
-                elevator._estimatedPassengerCount += 1;
-            } else if (elevator._lastUpdatedLoadFactor > loadFactor) {
-                elevator._estimatedPassengerCount -= 1;
-            }
-            elevator._lastUpdatedLoadFactor = loadFactor;
+            elevator._estimatePassengerCount();
         });
         // floors.forEach((floor) => {
         //     if (floor._upRequestPending) {

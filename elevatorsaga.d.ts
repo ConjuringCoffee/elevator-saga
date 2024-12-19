@@ -80,6 +80,7 @@ interface Elevator {
     _index: number;
     _lastUpdatedLoadFactor: number;
     _estimatedPassengerCount: number;
+    _estimatePassengerCount: () => void;
 }
 
 interface FloorEvents {
