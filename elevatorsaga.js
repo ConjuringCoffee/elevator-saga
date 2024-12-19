@@ -217,15 +217,15 @@
     },
 
     update: function (dt, elevators, floors) {
-        console.debug("\nUpdate:");
-        floors.forEach((floor) => {
-            if (floor._upRequestPending) {
-                console.debug(`Floor ${floor.floorNum()} has up request`);
-            }
-            if (floor._downRequestPending) {
-                console.debug(`Floor ${floor.floorNum()} has down request`);
-            }
-        })
+        // console.debug("\nUpdate:");
+        // floors.forEach((floor) => {
+        //     if (floor._upRequestPending) {
+        //         console.debug(`Floor ${floor.floorNum()} has up request`);
+        //     }
+        //     if (floor._downRequestPending) {
+        //         console.debug(`Floor ${floor.floorNum()} has down request`);
+        //     }
+        // })
     },
 
 })
