@@ -94,8 +94,8 @@ interface Floor {
      */
     floorNum: () => number;
     on<Event extends keyof FloorEvents>(type: Event, handler: FloorEvents[Event]): void;
-    _upRequestPending: boolean;
-    _downRequestPending: boolean;
+    _upRequestStatus: 'inactive' | 'active';
+    _downRequestStatus: 'inactive' | 'active';
 }
 
 interface Game {

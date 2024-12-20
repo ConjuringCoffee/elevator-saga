@@ -106,8 +106,8 @@ beforeEach(() => {
 
     const createFloor = (floorNumber: number): MockFloor => {
         return {
-            _upRequestPending: false,
-            _downRequestPending: false,
+            _upRequestStatus: 'inactive',
+            _downRequestStatus: 'inactive',
             floorNum: () => floorNumber,
             handlers: {},
             on(type, handler) {
@@ -143,8 +143,8 @@ test('All elevators have an initial load factor of zero', () => {
 
 test('All requests on floors are false in the beginning', () => {
     floors.forEach((floor) => {
-        expect(floor._upRequestPending).toBe(false);
-        expect(floor._downRequestPending).toBe(false);
+        expect(floor._upRequestStatus).toBe('inactive');
+        expect(floor._downRequestStatus).toBe('inactive');
     });
 });
 
@@ -160,12 +160,12 @@ describe("Up / down button requests on floors:", () => {
     describe('If no elevator is stopped on the same floor:', () => {
         test('Up button request is remembered', () => {
             floor.trigger('up_button_pressed');
-            expect(floor._upRequestPending).toBe(true);
+            expect(floor._upRequestStatus).toBe('active');
         });
 
         test('Down button request is remembered', () => {
             floor.trigger('down_button_pressed');
-            expect(floor._downRequestPending).toBe(true);
+            expect(floor._downRequestStatus).toBe('active');
         });
 
         test('If an elevator is waiting, move it to the floor', () => {
@@ -187,8 +187,8 @@ describe("Floor button presses:", () => {
         elevator.currentFloorValue = 1;
 
         floor = floors[1];
-        floor._upRequestPending = true;
-        floor._downRequestPending = true;
+        floor._upRequestStatus = 'active';
+        floor._downRequestStatus = 'active';
     });
 
     test("If destination queue is empty, go to that floor", () => {
@@ -202,15 +202,15 @@ describe("Floor button presses:", () => {
     test("If floor pressed is higher, then remove up request", () => {
         elevator.trigger("floor_button_pressed", 2);
 
-        expect(floor._upRequestPending).toBe(false);
-        expect(floor._downRequestPending).toBe(true);
+        expect(floor._upRequestStatus).toBe('inactive');
+        expect(floor._downRequestStatus).toBe('active');
     });
 
     test("If floor pressed is lower, then remove down request", () => {
         elevator.trigger("floor_button_pressed", 0);
 
-        expect(floor._upRequestPending).toBe(true);
-        expect(floor._downRequestPending).toBe(false);
+        expect(floor._upRequestStatus).toBe('active');
+        expect(floor._downRequestStatus).toBe('inactive');
     });
 
     test("If a floor closer was pressed now, override it", () => {
@@ -261,9 +261,9 @@ describe("Elevator stopped:", () => {
         });
 
         test("If there is still a request on the current floor, then wait", () => {
-            floors[1]._upRequestPending = true;
-            floors[2]._upRequestPending = true;
-            floors[3]._upRequestPending = true;
+            floors[1]._upRequestStatus = 'active';
+            floors[2]._upRequestStatus = 'active';
+            floors[3]._upRequestStatus = 'active';
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
@@ -271,8 +271,8 @@ describe("Elevator stopped:", () => {
         });
 
         test("If there are requests on other floors, go to the nearest", () => {
-            floors[2]._upRequestPending = true;
-            floors[3]._upRequestPending = true;
+            floors[2]._upRequestStatus = 'active';
+            floors[3]._upRequestStatus = 'active';
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, [2]);
@@ -286,31 +286,31 @@ describe("Elevator stopped:", () => {
             elevator.destinationQueue = [2];
             elevator.pressedFloors = [2];
 
-            stoppedFloor._upRequestPending = true;
-            stoppedFloor._downRequestPending = true;
+            stoppedFloor._upRequestStatus = 'active';
+            stoppedFloor._downRequestStatus = 'active';
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
 
             expectDestinationQueueToBe(elevator, [2]);
 
             const floor = floors[elevator.currentFloorValue];
-            expect(floor._upRequestPending).toBe(false);
-            expect(floor._downRequestPending).toBe(true);
+            expect(floor._upRequestStatus).toBe('inactive');
+            expect(floor._downRequestStatus).toBe('active');
         });
 
         test("If the elevator moves down, clear the down request", () => {
             elevator.destinationQueue = [0];
             elevator.pressedFloors = [0];
 
-            stoppedFloor._upRequestPending = true;
-            stoppedFloor._downRequestPending = true;
+            stoppedFloor._upRequestStatus = 'active';
+            stoppedFloor._downRequestStatus = 'active';
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
 
             expectDestinationQueueToBe(elevator, [0]);
 
-            expect(stoppedFloor._upRequestPending).toBe(true);
-            expect(stoppedFloor._downRequestPending).toBe(false);
+            expect(stoppedFloor._upRequestStatus).toBe('active');
+            expect(stoppedFloor._downRequestStatus).toBe('inactive');
         });
     })
 });
@@ -331,7 +331,7 @@ describe("Passing floor:", () => {
             elevator.destinationDirectionValue = 'up';
 
             floor = floors[1];
-            floor._upRequestPending = true;
+            floor._upRequestStatus = 'active';
         });
 
         test("Set floor as destination if an additional passenger fits", () => {
@@ -344,7 +344,7 @@ describe("Passing floor:", () => {
 
         test("Also remove the up request to avoid other elevator targeting this", () => {
             elevator.trigger("passing_floor", floor.floorNum(), "up");
-            expect(floor._upRequestPending).toBe(false);
+            expect(floor._upRequestStatus).toBe('inactive');
         });
 
         test("Do not set floor as destination if no additional passenger fits", () => {

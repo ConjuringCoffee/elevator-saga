@@ -76,8 +76,12 @@
             }
 
             const getFloorsWithRequest = () => {
-                return floors.filter((floor) => floor._downRequestPending || floor._upRequestPending);
-            }
+                return floors.filter((floor) => {
+                    return floor._downRequestStatus === "active"
+                        || floor._upRequestStatus === "active";
+                })
+            };
+
 
             elevator._index = index;
             elevator._lastUpdatedLoadFactor = 0;
@@ -121,9 +125,9 @@
                 if (elevator.destinationQueue.length > 0) {
                     // Clear requests in case the floor button was already pressed by a previous passenger
                     if (elevator.destinationQueue[0] > floorNumberStopped) {
-                        floors[floorNumberStopped]._upRequestPending = false;
+                        floors[floorNumberStopped]._upRequestStatus = 'inactive';
                     } else if (elevator.destinationQueue[0] < floorNumberStopped) {
-                        floors[floorNumberStopped]._downRequestPending = false;
+                        floors[floorNumberStopped]._downRequestStatus = 'inactive';
                     } else {
                         throw new Error('The next destination should not be the current floor');
                     }
@@ -138,9 +142,9 @@
                 const floor = floors[elevator.currentFloor()];
 
                 if (floorNumberPressed > elevator.currentFloor()) {
-                    floor._upRequestPending = false;
+                    floor._upRequestStatus = 'inactive';
                 } else if (floorNumberPressed < elevator.currentFloor()) {
-                    floor._downRequestPending = false;
+                    floor._downRequestStatus = 'inactive';
                 } else {
                     throw new Error('A button was pressed for the current floor');
                 }
@@ -158,14 +162,14 @@
 
                 if (elevator._estimatedPassengerCount < elevator.maxPassengerCount() && elevator.loadFactor() < 1) {
                     const floorPassing = floors[floorNumberPassing];
-                    if (direction === "up" && floorPassing._upRequestPending) {
+                    if (direction === "up" && floorPassing._upRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForUp();
-                        floorPassing._upRequestPending = false;
-                    } else if (direction === "down" && floorPassing._downRequestPending) {
+                        floorPassing._upRequestStatus = 'inactive';
+                    } else if (direction === "down" && floorPassing._downRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForDown();
-                        floorPassing._downRequestPending = false;
+                        floorPassing._downRequestStatus = 'inactive';
                     }
                 }
             });
@@ -177,8 +181,8 @@
                     const elevatorFloor = floors[elevator.currentFloor()];
                     return elevator.destinationDirection() === 'stopped'
                         && elevator.destinationQueue.length === 0
-                        && !elevatorFloor._upRequestPending
-                        && !elevatorFloor._downRequestPending
+                        && elevatorFloor._upRequestStatus === "inactive"
+                        && elevatorFloor._downRequestStatus === "inactive"
                 });
             };
 
@@ -201,12 +205,12 @@
                 return closestElevator;
             }
 
-            floor._downRequestPending = false;
-            floor._upRequestPending = false;
+            floor._downRequestStatus = 'inactive';
+            floor._upRequestStatus = 'inactive';
 
             floor.on("up_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Up button was pressed`);
-                floor._upRequestPending = true;
+                floor._upRequestStatus = 'active';
 
                 const idleElevators = getIdleElevators();
 
@@ -222,7 +226,7 @@
 
             floor.on("down_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Down button was pressed`);
-                floor._downRequestPending = true;
+                floor._downRequestStatus = 'active';
 
                 const idleElevators = getIdleElevators();
 
