@@ -253,6 +253,37 @@ describe("Elevator stopped:", () => {
         expectOnlyUpIndicator(elevator);
     });
 
+    test("If the elevator moves up, clear the up request", () => {
+        elevator.destinationQueue = [2];
+        elevator.pressedFloors = [2];
+
+        stoppedFloor._upRequestStatus = 'active';
+        stoppedFloor._downRequestStatus = 'active';
+
+        elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+
+        expectDestinationQueueToBe(elevator, [2]);
+
+        const floor = floors[elevator.currentFloorValue];
+        expect(floor._upRequestStatus).toBe('inactive');
+        expect(floor._downRequestStatus).toBe('active');
+    });
+
+    test("If the elevator moves down, clear the down request", () => {
+        elevator.destinationQueue = [0];
+        elevator.pressedFloors = [0];
+
+        stoppedFloor._upRequestStatus = 'active';
+        stoppedFloor._downRequestStatus = 'active';
+
+        elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+
+        expectDestinationQueueToBe(elevator, [0]);
+
+        expect(stoppedFloor._upRequestStatus).toBe('active');
+        expect(stoppedFloor._downRequestStatus).toBe('inactive');
+    });
+
     describe("If no floor button is pressed, turn on up and down indicators and...:", () => {
         test("If there are no requests, simply wait", () => {
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
@@ -280,37 +311,6 @@ describe("Elevator stopped:", () => {
 
             // TODO: Only expect one direction. Otherwise, people might get onto the elevator simulateneously for different directions
             expectUpAndDownIndicators(elevator);
-        });
-
-        test("If the elevator moves up, clear the up request", () => {
-            elevator.destinationQueue = [2];
-            elevator.pressedFloors = [2];
-
-            stoppedFloor._upRequestStatus = 'active';
-            stoppedFloor._downRequestStatus = 'active';
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-
-            expectDestinationQueueToBe(elevator, [2]);
-
-            const floor = floors[elevator.currentFloorValue];
-            expect(floor._upRequestStatus).toBe('inactive');
-            expect(floor._downRequestStatus).toBe('active');
-        });
-
-        test("If the elevator moves down, clear the down request", () => {
-            elevator.destinationQueue = [0];
-            elevator.pressedFloors = [0];
-
-            stoppedFloor._upRequestStatus = 'active';
-            stoppedFloor._downRequestStatus = 'active';
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-
-            expectDestinationQueueToBe(elevator, [0]);
-
-            expect(stoppedFloor._upRequestStatus).toBe('active');
-            expect(stoppedFloor._downRequestStatus).toBe('inactive');
         });
     })
 });
@@ -342,9 +342,9 @@ describe("Passing floor:", () => {
             expect(elevator.checkDestinationQueue).toHaveBeenCalled();
         });
 
-        test("Also remove the up request to avoid other elevator targeting this", () => {
+        test("Also accept the up request", () => {
             elevator.trigger("passing_floor", floor.floorNum(), "up");
-            expect(floor._upRequestStatus).toBe('inactive');
+            expect(floor._upRequestStatus).toBe('accepted');
         });
 
         test("Do not set floor as destination if no additional passenger fits", () => {
@@ -366,8 +366,6 @@ describe("Passing floor:", () => {
     });
 
     // TODO: Test for: If on the way down pressed floor, then set destination
-    // TODO: Test for when both indicators switch to single indicator
-    // TODO: Elevators sometimes reach their destination but another elevator already picked all people up
 });
 
 test("Increasing load factor increments estimated passenger count", () => {
@@ -416,3 +414,6 @@ test("Estimated passenger count is over zero if load factor is over zero", () =>
     expect(elevator._estimatedPassengerCount).toBe(1);
     expect(elevator._lastUpdatedLoadFactor).toBe(0.1);
 });
+
+// TODO: Elevators sometimes reach their destination but another elevator already picked all people up
+// TODO: When choosing a destination, check if another elevator has a pressed floor button for that floor (with the correct direction)

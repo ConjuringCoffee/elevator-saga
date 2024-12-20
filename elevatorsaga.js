@@ -165,11 +165,11 @@
                     if (direction === "up" && floorPassing._upRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForUp();
-                        floorPassing._upRequestStatus = 'inactive';
+                        floorPassing._upRequestStatus = 'accepted';
                     } else if (direction === "down" && floorPassing._downRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForDown();
-                        floorPassing._downRequestStatus = 'inactive';
+                        floorPassing._downRequestStatus = 'accepted';
                     }
                 }
             });
