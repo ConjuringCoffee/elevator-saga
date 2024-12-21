@@ -110,14 +110,26 @@
                     setDestination(getClosestPressedFloor());
                     setUpDownIndicatorsByDestination();
 
+                    if (elevator.destinationQueue.length > 0) {
+                        // The elevator is leaving, so clear requests in case the floor button was already pressed by a previous passenger
+                        if (elevator.goingUpIndicator(null)) {
+                            floors[floorNumberStopped]._upRequestStatus = 'inactive';
+                        } else if (elevator.goingDownIndicator(null)) {
+                            floors[floorNumberStopped]._downRequestStatus = 'inactive';
+                        } else {
+                            throw new Error('Both indicators are on or off unexpectedly');
+                        }
+                    }
+
                     elevator._currentThought = `Was stopped, now targeting pressed floor ${elevator.destinationQueue[0]}`;
                 } else {
-                    setBothUpDownIndicators();
-
                     const floorsWithRequest = getFloorsWithRequest();
                     const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
 
-                    if (!floorNumbersWithRequest.includes(floorNumberStopped)) {
+                    if (floorNumbersWithRequest.includes(floorNumberStopped)) {
+                        // TODO: Should both be really set?
+                        setBothUpDownIndicators();
+                    } else {
                         if (floorNumbersWithRequest.length > 0) {
                             const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
                             setDestination(closestFloorNumber);
@@ -134,17 +146,6 @@
                                 elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle down request`;
                             }
                         }
-                    }
-                }
-
-                if (elevator.destinationQueue.length > 0) {
-                    // Clear requests in case the floor button was already pressed by a previous passenger
-                    if (elevator.destinationQueue[0] > floorNumberStopped) {
-                        floors[floorNumberStopped]._upRequestStatus = 'inactive';
-                    } else if (elevator.destinationQueue[0] < floorNumberStopped) {
-                        floors[floorNumberStopped]._downRequestStatus = 'inactive';
-                    } else {
-                        throw new Error('The next destination should not be the current floor');
                     }
                 }
             });

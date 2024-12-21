@@ -240,54 +240,58 @@ describe("Elevator stopped:", () => {
         // The elevator drives to floor 1 and stops there
         elevator = elevators[0];
         elevator.currentFloorValue = 1;
-        elevator.goingDownIndicatorValue = true;
-        elevator.goingUpIndicatorValue = true;
+        elevator.goingDownIndicator(true);
+        elevator.goingUpIndicator(true);
 
         stoppedFloor = floors[elevator.currentFloorValue];
     });
 
-    test("If floor buttons are already pressed, go to the nearest next", () => {
-        elevator.pressedFloors = [3, 2];
-        elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+    describe('If at least one floor button is pressed', () => {
+        test("If multiple floor buttons are already pressed, go to the nearest next", () => {
+            elevator.pressedFloors = [3, 2];
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
 
-        expectDestinationQueueToBe(elevator, [2]);
-        expect(elevator.checkDestinationQueue).toHaveBeenCalled();
-        expectOnlyUpIndicator(elevator);
+            expectDestinationQueueToBe(elevator, [2]);
+            expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+            expectOnlyUpIndicator(elevator);
+        });
+
+
+
+        test("If the elevator moves up, clear the up request", () => {
+            elevator.destinationQueue = [2];
+            elevator.pressedFloors = [2];
+
+            stoppedFloor._upRequestStatus = 'active';
+            stoppedFloor._downRequestStatus = 'active';
+
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+
+            expectDestinationQueueToBe(elevator, [2]);
+
+            const floor = floors[elevator.currentFloorValue];
+            expect(floor._upRequestStatus).toBe('inactive');
+            expect(floor._downRequestStatus).toBe('active');
+        });
+
+        test("If the elevator moves down, clear the down request", () => {
+            elevator.destinationQueue = [0];
+            elevator.pressedFloors = [0];
+
+            stoppedFloor._upRequestStatus = 'active';
+            stoppedFloor._downRequestStatus = 'active';
+
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+
+            expectDestinationQueueToBe(elevator, [0]);
+
+            expect(stoppedFloor._upRequestStatus).toBe('active');
+            expect(stoppedFloor._downRequestStatus).toBe('inactive');
+        });
     });
 
-    test("If the elevator moves up, clear the up request", () => {
-        elevator.destinationQueue = [2];
-        elevator.pressedFloors = [2];
-
-        stoppedFloor._upRequestStatus = 'active';
-        stoppedFloor._downRequestStatus = 'active';
-
-        elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-
-        expectDestinationQueueToBe(elevator, [2]);
-
-        const floor = floors[elevator.currentFloorValue];
-        expect(floor._upRequestStatus).toBe('inactive');
-        expect(floor._downRequestStatus).toBe('active');
-    });
-
-    test("If the elevator moves down, clear the down request", () => {
-        elevator.destinationQueue = [0];
-        elevator.pressedFloors = [0];
-
-        stoppedFloor._upRequestStatus = 'active';
-        stoppedFloor._downRequestStatus = 'active';
-
-        elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-
-        expectDestinationQueueToBe(elevator, [0]);
-
-        expect(stoppedFloor._upRequestStatus).toBe('active');
-        expect(stoppedFloor._downRequestStatus).toBe('inactive');
-    });
-
-    describe("If no floor button is pressed, turn on up and down indicators and...:", () => {
-        test("If there are no requests, simply wait", () => {
+    describe("If no floor button is pressed:", () => {
+        test("If there are no requests, simply wait and turn on up and down indicators", () => {
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
             expectUpAndDownIndicators(elevator);
