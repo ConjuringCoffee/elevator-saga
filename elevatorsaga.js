@@ -167,6 +167,8 @@
                     setDestination(floorNumberPressed);
                     setUpDownIndicatorsByDestination();
 
+                    // TODO: Do something with the requests on that floor
+
                     elevator._currentThought = `Targeting pressed floor ${elevator.destinationQueue[0]}`;
                 }
             });
@@ -177,13 +179,13 @@
                 if (elevator._estimatedPassengerCount < elevator.maxPassengerCount() && elevator.loadFactor() < 1) {
                     const floorPassing = floors[floorNumberPassing];
 
-                    if (direction === "up" && floorPassing._upRequestStatus === "active") {
+                    if (direction === "up" && elevator.goingUpIndicator(null) === true && floorPassing._upRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForUp();
                         floorPassing._upRequestStatus = 'accepted';
 
                         elevator._currentThought = `Was on the way up to floor ${currentDestination}, but stopping at passing floor ${floorNumberPassing} to handle up request`;
-                    } else if (direction === "down" && floorPassing._downRequestStatus === "active") {
+                    } else if (direction === "down" && elevator.goingDownIndicator(null) === true && floorPassing._downRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForDown();
                         floorPassing._downRequestStatus = 'accepted';

@@ -379,7 +379,17 @@ describe("Passing floor:", () => {
         test("Do not set floor as destination if load factor is one", () => {
             elevator._estimatedPassengerCount = 2;
             elevator.loadFactorValue = 1;
-            elevator.trigger("passing_floor", 1, "up");
+            elevator.trigger("passing_floor", floor.floorNum(), "up");
+
+            expectDestinationQueueToBe(elevator, [3]);
+            expect(elevator.checkDestinationQueue).toHaveBeenCalledTimes(0);
+        });
+
+        test("Do not set floor as destination if request direction does not match indicator", () => {
+            elevator.goingUpIndicator(false);
+            elevator.goingDownIndicator(true);
+
+            elevator.trigger("passing_floor", floor.floorNum(), "up");
 
             expectDestinationQueueToBe(elevator, [3]);
             expect(elevator.checkDestinationQueue).toHaveBeenCalledTimes(0);
