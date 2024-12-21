@@ -104,6 +104,8 @@
             elevator.on("stopped_at_floor", (floorNumberStopped) => {
                 console.debug(`\nElevator ${elevator._index}: Stopped at floor ${floorNumberStopped}`);
 
+                const floorStopped = floors[floorNumberStopped];
+
                 elevator._estimatePassengerCount();
 
                 if (elevator.getPressedFloors().length > 0) {
@@ -113,9 +115,9 @@
                     if (elevator.destinationQueue.length > 0) {
                         // The elevator is leaving, so clear requests in case the floor button was already pressed by a previous passenger
                         if (elevator.goingUpIndicator()) {
-                            floors[floorNumberStopped]._upRequestStatus = 'inactive';
+                            floorStopped._upRequestStatus = 'inactive';
                         } else if (elevator.goingDownIndicator()) {
-                            floors[floorNumberStopped]._downRequestStatus = 'inactive';
+                            floorStopped._downRequestStatus = 'inactive';
                         } else {
                             throw new Error('Both indicators are on or off unexpectedly');
                         }
@@ -123,13 +125,18 @@
 
                     elevator._currentThought = `Was stopped, now targeting pressed floor ${elevator.destinationQueue[0]}`;
                 } else {
-                    const floorsWithRequest = getFloorsWithRequest();
-                    const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
-
-                    if (floorNumbersWithRequest.includes(floorNumberStopped)) {
+                    if (floorStopped._upRequestStatus === 'active'
+                        || floorStopped._upRequestStatus === "accepted"
+                        || floorStopped._downRequestStatus === 'active'
+                        || floorStopped._downRequestStatus === 'accepted'
+                    ) {
                         // TODO: Should both be really set?
                         setBothUpDownIndicators();
+                        elevator._currentThought = `Was stopped without pressed floor, waiting for requests on current floor`;
                     } else {
+                        const floorsWithRequest = getFloorsWithRequest();
+                        const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
+
                         if (floorNumbersWithRequest.length > 0) {
                             const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
                             setDestination(closestFloorNumber);

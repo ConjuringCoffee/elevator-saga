@@ -256,8 +256,6 @@ describe("Elevator stopped:", () => {
             expectOnlyUpIndicator(elevator);
         });
 
-
-
         test("If the elevator moves up, clear the up request", () => {
             elevator.destinationQueue = [2];
             elevator.pressedFloors = [2];
@@ -297,10 +295,18 @@ describe("Elevator stopped:", () => {
             expectUpAndDownIndicators(elevator);
         });
 
-        test("If there is still a request on the current floor, then wait", () => {
+        test("If there is still an active request on the current floor, then wait", () => {
             floors[1]._upRequestStatus = 'active';
             floors[2]._upRequestStatus = 'active';
-            floors[3]._upRequestStatus = 'active';
+
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+            expectDestinationQueueToBe(elevator, []);
+            expectUpAndDownIndicators(elevator);
+        });
+
+        test("If there is still an accepted request on the current floor, then wait", () => {
+            floors[1]._upRequestStatus = 'accepted';
+            floors[2]._upRequestStatus = 'active';
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
