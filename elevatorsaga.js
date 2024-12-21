@@ -112,9 +112,9 @@
 
                     if (elevator.destinationQueue.length > 0) {
                         // The elevator is leaving, so clear requests in case the floor button was already pressed by a previous passenger
-                        if (elevator.goingUpIndicator(null)) {
+                        if (elevator.goingUpIndicator()) {
                             floors[floorNumberStopped]._upRequestStatus = 'inactive';
-                        } else if (elevator.goingDownIndicator(null)) {
+                        } else if (elevator.goingDownIndicator()) {
                             floors[floorNumberStopped]._downRequestStatus = 'inactive';
                         } else {
                             throw new Error('Both indicators are on or off unexpectedly');
@@ -180,13 +180,13 @@
                 if (elevator._estimatedPassengerCount < elevator.maxPassengerCount() && elevator.loadFactor() < 1) {
                     const floorPassing = floors[floorNumberPassing];
 
-                    if (direction === "up" && elevator.goingUpIndicator(null) === true && floorPassing._upRequestStatus === "active") {
+                    if (direction === "up" && elevator.goingUpIndicator() === true && floorPassing._upRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForUp();
                         floorPassing._upRequestStatus = 'accepted';
 
                         elevator._currentThought = `Was on the way up to floor ${currentDestination}, but stopping at passing floor ${floorNumberPassing} to handle up request`;
-                    } else if (direction === "down" && elevator.goingDownIndicator(null) === true && floorPassing._downRequestStatus === "active") {
+                    } else if (direction === "down" && elevator.goingDownIndicator() === true && floorPassing._downRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForDown();
                         floorPassing._downRequestStatus = 'accepted';

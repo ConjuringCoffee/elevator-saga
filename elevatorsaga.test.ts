@@ -20,18 +20,18 @@ const expectDestinationQueueToBe = (elevator: MockElevator, expectedQueue: numbe
 }
 
 const expectOnlyUpIndicator = (elevator: MockElevator) => {
-    expect(elevator.goingUpIndicator(null)).toBe(true);
-    expect(elevator.goingDownIndicator(null)).toBe(false);
+    expect(elevator.goingUpIndicator()).toBe(true);
+    expect(elevator.goingDownIndicator()).toBe(false);
 }
 
 const expectOnlyDownIndicator = (elevator: MockElevator) => {
-    expect(elevator.goingUpIndicator(null)).toBe(false);
-    expect(elevator.goingDownIndicator(null)).toBe(true);
+    expect(elevator.goingUpIndicator()).toBe(false);
+    expect(elevator.goingDownIndicator()).toBe(true);
 }
 
 const expectUpAndDownIndicators = (elevator: MockElevator) => {
-    expect(elevator.goingUpIndicator(null)).toBe(true);
-    expect(elevator.goingDownIndicator(null)).toBe(true);
+    expect(elevator.goingUpIndicator()).toBe(true);
+    expect(elevator.goingDownIndicator()).toBe(true);
 }
 
 const fs = require('fs');
@@ -80,13 +80,13 @@ beforeEach(() => {
                 return this.pressedFloors;
             },
             goingUpIndicator(newIndicatorState) {
-                if (newIndicatorState !== null) {
+                if (newIndicatorState !== undefined) {
                     this.goingUpIndicatorValue = newIndicatorState;
                 }
                 return this.goingUpIndicatorValue;
             },
             goingDownIndicator(newIndicatorState) {
-                if (newIndicatorState !== null) {
+                if (newIndicatorState !== undefined) {
                     this.goingDownIndicatorValue = newIndicatorState;
                 }
                 return this.goingDownIndicatorValue;

@@ -43,11 +43,11 @@ interface Elevator {
     /**
      * Gets or sets the going up indicator, which will affect passenger behaviour when stopping at floors.
      */
-    goingUpIndicator: (newIndicatorState: boolean?) => boolean;
+    goingUpIndicator: (newIndicatorState?: boolean) => boolean;
     /**
      * Gets or sets the going down indicator, which will affect passenger behaviour when stopping at floors.
      */
-    goingDownIndicator: (newIndicatorState: boolean?) => boolean;
+    goingDownIndicator: (newIndicatorState?: boolean) => boolean;
     /**
      * Gets the maximum number of passengers that can occupy the elevator at the same time.
      */
