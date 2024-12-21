@@ -301,30 +301,49 @@ describe("Elevator stopped:", () => {
             expectUpAndDownIndicators(elevator);
         });
 
-        test("If there are requests on other floors, go to the nearest", () => {
-            floors[2]._upRequestStatus = 'active';
-            floors[3]._upRequestStatus = 'active';
+        describe("About requests on other floors:", () => {
+            test("If there are requests on multiple floors, go to the nearest", () => {
+                floors[2]._upRequestStatus = 'active';
+                floors[3]._upRequestStatus = 'active';
 
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-            expectDestinationQueueToBe(elevator, [2]);
-            expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+                elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+                expectDestinationQueueToBe(elevator, [2]);
+                expect(elevator.checkDestinationQueue).toHaveBeenCalled();
 
-            // TODO: Only expect one direction. Otherwise, people might get onto the elevator simulateneously for different directions
-            expectUpAndDownIndicators(elevator);
-        });
+
+            });
+
+            test("If it is an up request, then set only up indicator and accept request", () => {
+                const floor = floors[2];
+                floor._upRequestStatus = 'active';
+
+                elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+                expectOnlyUpIndicator(elevator);
+                expect(floor._upRequestStatus).toBe("accepted");
+            });
+
+            test("If it is a down request, then set only down indicator and accept request", () => {
+                const floor = floors[2];
+                floor._downRequestStatus = 'active';
+
+                elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+                expectOnlyDownIndicator(elevator);
+                expect(floor._downRequestStatus).toBe("accepted");
+            });
+        })
+
     })
 });
 
 describe("Passing floor:", () => {
     var elevator: MockElevator;
+    var floor: MockFloor;
 
     beforeEach(() => {
         elevator = elevators[0];
     });
 
-    describe("If on the way up to pressed floor", () => {
-        var floor: MockFloor;
-
+    describe("If up request on the way up to pressed floor", () => {
         beforeEach(() => {
             elevator.pressedFloors = [3];
             elevator.destinationQueue = [3];
@@ -358,14 +377,39 @@ describe("Passing floor:", () => {
         test("Do not set floor as destination if load factor is one", () => {
             elevator._estimatedPassengerCount = 2;
             elevator.loadFactorValue = 1;
-            elevator.trigger("passing_floor", floor.floorNum(), "up");
+            elevator.trigger("passing_floor", 1, "up");
 
             expectDestinationQueueToBe(elevator, [3]);
             expect(elevator.checkDestinationQueue).toHaveBeenCalledTimes(0);
         });
     });
 
-    // TODO: Test for: If on the way down pressed floor, then set destination
+    describe("If on the way up without any pressed floors", () => {
+        test("If passing floor has up request, then set destination and accept up request", () => {
+            elevator.destinationQueue = [3];
+            elevator.destinationDirectionValue = 'up';
+            floor = floors[1];
+            floor._upRequestStatus = 'active';
+
+            elevator.trigger("passing_floor", 1, "up");
+
+            expectDestinationQueueToBe(elevator, [1]);
+            expect(floor._upRequestStatus).toBe("accepted");
+        });
+        test("If passing floor only has down request, then do not stop", () => {
+            elevator.destinationQueue = [3];
+            elevator.destinationDirectionValue = 'up';
+            floor = floors[1];
+            floor._downRequestStatus = 'active';
+
+            elevator.trigger("passing_floor", 1, "up");
+
+            expectDestinationQueueToBe(elevator, [3]);
+            expect(floor._downRequestStatus).toBe("active");
+        });
+    });
+
+    // TODO: Test for: If on the way down to pressed floor
 });
 
 test("Increasing load factor increments estimated passenger count", () => {

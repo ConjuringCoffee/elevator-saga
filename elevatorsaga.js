@@ -118,6 +118,15 @@
                         if (floorNumbersWithRequest.length > 0) {
                             const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
                             setDestination(closestFloorNumber);
+                            const closestFloor = floors[closestFloorNumber];
+                            // TODO: Handle case in which up AND down requests are active
+                            if (closestFloor._upRequestStatus === 'active') {
+                                closestFloor._upRequestStatus = 'accepted';
+                                setUpDownIndicatorsForUp();
+                            } else if (closestFloor._downRequestStatus === 'active') {
+                                closestFloor._downRequestStatus = 'accepted';
+                                setUpDownIndicatorsForDown();
+                            }
                         }
                     }
                 }
