@@ -86,6 +86,7 @@
             elevator._index = index;
             elevator._lastUpdatedLoadFactor = 0;
             elevator._estimatedPassengerCount = 0;
+            elevator._currentThought = 'Initialized';
 
             elevator._estimatePassengerCount = () => {
                 const loadFactor = elevator.loadFactor();
@@ -108,6 +109,8 @@
                 if (elevator.getPressedFloors().length > 0) {
                     setDestination(getClosestPressedFloor());
                     setUpDownIndicatorsByDestination();
+
+                    elevator._currentThought = `Was stopped, now targeting pressed floor ${elevator.destinationQueue[0]}`;
                 } else {
                     setBothUpDownIndicators();
 
@@ -119,13 +122,16 @@
                             const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
                             setDestination(closestFloorNumber);
                             const closestFloor = floors[closestFloorNumber];
+
                             // TODO: Handle case in which up AND down requests are active
                             if (closestFloor._upRequestStatus === 'active') {
                                 closestFloor._upRequestStatus = 'accepted';
                                 setUpDownIndicatorsForUp();
+                                elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle up request`;
                             } else if (closestFloor._downRequestStatus === 'active') {
                                 closestFloor._downRequestStatus = 'accepted';
                                 setUpDownIndicatorsForDown();
+                                elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle down request`;
                             }
                         }
                     }
@@ -141,8 +147,6 @@
                         throw new Error('The next destination should not be the current floor');
                     }
                 }
-
-                console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
             });
 
             elevator.on("floor_button_pressed", (floorNumberPressed) => {
@@ -162,23 +166,29 @@
                     || Math.abs(elevator.currentFloor() - floorNumberPressed) < Math.abs(elevator.currentFloor() - elevator.destinationQueue[0])) {
                     setDestination(floorNumberPressed);
                     setUpDownIndicatorsByDestination();
+
+                    elevator._currentThought = `Targeting pressed floor ${elevator.destinationQueue[0]}`;
                 }
-                console.debug('Destination queue at the end:', elevator.destinationQueue.toString());
             });
 
             elevator.on("passing_floor", (floorNumberPassing, direction) => {
+                const currentDestination = elevator.destinationQueue[0];
                 console.debug(`\nElevator ${elevator._index}: Floor ${floorNumberPassing} is being passed`);
-
                 if (elevator._estimatedPassengerCount < elevator.maxPassengerCount() && elevator.loadFactor() < 1) {
                     const floorPassing = floors[floorNumberPassing];
+
                     if (direction === "up" && floorPassing._upRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForUp();
                         floorPassing._upRequestStatus = 'accepted';
+
+                        elevator._currentThought = `Was on the way up to floor ${currentDestination}, but stopping at passing floor ${floorNumberPassing} to handle up request`;
                     } else if (direction === "down" && floorPassing._downRequestStatus === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForDown();
                         floorPassing._downRequestStatus = 'accepted';
+
+                        elevator._currentThought = `Was on the way down to floor ${currentDestination}, but stopping at passing floor ${floorNumberPassing} to handle down request`;
                     }
                 }
             });
@@ -230,6 +240,8 @@
                     closestElevator.goingUpIndicator(true);
                     // @ts-ignore // TODO
                     closestElevator.goingDownIndicator(false);
+                    // @ts-ignore // TODO
+                    closestElevator._currentThought = `Was idle, now targeting floor ${floor.floorNum()} to handle fresh up request`;
                 }
             });
 
@@ -246,6 +258,8 @@
                     closestElevator.goingUpIndicator(false);
                     // @ts-ignore // TODO
                     closestElevator.goingDownIndicator(true);
+                    // @ts-ignore // TODO
+                    closestElevator._currentThought = `Was idle, now targeting floor ${floor.floorNum()} to handle fresh down request`;
                 }
             });
         });
@@ -255,6 +269,13 @@
         // console.debug("\nUpdate:");
         elevators.forEach((elevator) => {
             elevator._estimatePassengerCount();
+
+            if (elevator._currentThought !== elevator._thoughtFromLastUpdate) {
+                console.debug(`\nUpdate: Elevator ${elevator._index}: (new) ${elevator._currentThought}`);
+                elevator._thoughtFromLastUpdate = elevator._currentThought;
+            } else {
+                // console.debug(`\nElevator ${elevator._index}: (old) ${elevator._currentThought}`);
+            }
         });
         // floors.forEach((floor) => {
         //     if (floor._upRequestPending) {

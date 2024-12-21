@@ -50,6 +50,8 @@ beforeEach(() => {
             _estimatePassengerCount() {
                 throw new Error("No need to implement this ever");
             },
+            _currentThought: '',
+            _thoughtFromLastUpdate: '',
             maxPassengerCountValue: 4,
             loadFactorValue: 0,
             currentFloorValue: 0,

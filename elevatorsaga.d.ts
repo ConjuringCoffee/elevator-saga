@@ -22,6 +22,7 @@ interface ElevatorEvents {
     stopped_at_floor: (floorNumber: number) => void;
 }
 
+// TODO: Move custom variables to separate interface that extends the original
 interface Elevator {
     /** 
      * Queue the elevator to go to specified floor number. 
@@ -81,6 +82,8 @@ interface Elevator {
     _lastUpdatedLoadFactor: number;
     _estimatedPassengerCount: number;
     _estimatePassengerCount: () => void;
+    _currentThought: string;
+    _thoughtFromLastUpdate: string;
 }
 
 interface FloorEvents {
@@ -88,6 +91,7 @@ interface FloorEvents {
     down_button_pressed: () => void;
 }
 
+// TODO: Move custom variables to separate interface that extends the original
 interface Floor {
     /**
      * Gets the floor number of the floor object.
