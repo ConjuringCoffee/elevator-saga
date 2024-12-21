@@ -125,15 +125,7 @@
 
                     elevator._currentThought = `Was stopped, now targeting pressed floor ${elevator.destinationQueue[0]}`;
                 } else {
-                    if (floorStopped._upRequestStatus === 'active'
-                        || floorStopped._upRequestStatus === "accepted"
-                        || floorStopped._downRequestStatus === 'active'
-                        || floorStopped._downRequestStatus === 'accepted'
-                    ) {
-                        // TODO: Should both be really set?
-                        setBothUpDownIndicators();
-                        elevator._currentThought = `Was stopped without pressed floor, waiting for requests on current floor`;
-                    } else {
+                    if (floorStopped._upRequestStatus === "inactive" && floorStopped._downRequestStatus === "inactive") {
                         const floorsWithRequest = getFloorsWithRequest();
                         const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
 
@@ -152,6 +144,18 @@
                                 setUpDownIndicatorsForDown();
                                 elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle down request`;
                             }
+                        } else {
+                            setBothUpDownIndicators();
+                            elevator._currentThought = `Was stopped without pressed floor, and there are no active requests anywhere. Waiting`;
+                        }
+                    } else {
+                        // TODO: Handle case in which up AND down requests are active
+                        if (floorStopped._upRequestStatus === 'active' || floorStopped._upRequestStatus === "accepted") {
+                            setUpDownIndicatorsForUp();
+                            elevator._currentThought = `Was stopped without pressed floor, waiting for up request on current floor`;
+                        } else if (floorStopped._downRequestStatus === 'active' || floorStopped._downRequestStatus === 'accepted') {
+                            setUpDownIndicatorsForDown();
+                            elevator._currentThought = `Was stopped without pressed floor, waiting for down request on current floor`;
                         }
                     }
                 }
@@ -176,7 +180,6 @@
                     setUpDownIndicatorsByDestination();
 
                     // TODO: Do something with the requests on that floor
-
                     elevator._currentThought = `Targeting pressed floor ${elevator.destinationQueue[0]}`;
                 }
             });
@@ -287,14 +290,6 @@
                 // console.debug(`\nElevator ${elevator._index}: (old) ${elevator._currentThought}`);
             }
         });
-        // floors.forEach((floor) => {
-        //     if (floor._upRequestPending) {
-        //         console.debug(`Floor ${floor.floorNum()} has up request`);
-        //     }
-        //     if (floor._downRequestPending) {
-        //         console.debug(`Floor ${floor.floorNum()} has down request`);
-        //     }
-        // })
     },
 
 })

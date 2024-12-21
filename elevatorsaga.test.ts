@@ -295,22 +295,36 @@ describe("Elevator stopped:", () => {
             expectUpAndDownIndicators(elevator);
         });
 
-        test("If there is still an active request on the current floor, then wait", () => {
+        test("If there is still an active up request on the current floor, then wait", () => {
             floors[1]._upRequestStatus = 'active';
-            floors[2]._upRequestStatus = 'active';
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
-            expectUpAndDownIndicators(elevator);
+            expectOnlyUpIndicator(elevator);
         });
 
-        test("If there is still an accepted request on the current floor, then wait", () => {
+        test("If there is still an accepted up request on the current floor, then wait", () => {
             floors[1]._upRequestStatus = 'accepted';
-            floors[2]._upRequestStatus = 'active';
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
-            expectUpAndDownIndicators(elevator);
+            expectOnlyUpIndicator(elevator);
+        });
+
+        test("If there is still an active down request on the current floor, then wait", () => {
+            floors[1]._downRequestStatus = 'active';
+
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+            expectDestinationQueueToBe(elevator, []);
+            expectOnlyDownIndicator(elevator);
+        });
+
+        test("If there is still an accepted down request on the current floor, then wait", () => {
+            floors[1]._downRequestStatus = 'accepted';
+
+            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
+            expectDestinationQueueToBe(elevator, []);
+            expectOnlyDownIndicator(elevator);
         });
 
         describe("About requests on other floors:", () => {
