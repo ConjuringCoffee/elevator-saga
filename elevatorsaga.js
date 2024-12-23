@@ -224,6 +224,7 @@
 
                 availableElevators.forEach((availableElevator) => {
                     const distance = Math.abs(availableElevator.currentFloor() - floor.floorNum());
+                    // TODO: If the distance is equal, prefer floors closer to the very bottom or the very top
                     if (distance < closestDistance) {
                         closestElevator = availableElevator;
                         closestDistance = distance;
