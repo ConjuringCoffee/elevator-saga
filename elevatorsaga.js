@@ -129,6 +129,7 @@
                     || upRequestStatusBeforeReset === "accepted"
                     || downRequestStatusBeforeReset === "active"
                     || downRequestStatusBeforeReset === "accepted") {
+                    // TODO: Do this earlier somewhere. This seems to waste time
                     setBothUpDownIndicators();
                     elevator._currentThought = `Was idle without pressed floor, and there is a request on the current floor. Waiting with both indicators on`;
 
