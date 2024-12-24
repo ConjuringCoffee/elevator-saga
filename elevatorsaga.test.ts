@@ -205,171 +205,46 @@ describe("Floor button presses:", () => {
         floor.setDownRequestStatus('active');
     });
 
-    test("If destination queue is empty, go to that floor", () => {
+    describe("If a floor button was previously pressed", () => {
+        test("If a floor closer was pressed now, override it", () => {
+            elevator.pressedFloors = [3];
+            elevator.destinationQueue = [3];
+            elevator.trigger("floor_button_pressed", 2);
+
+            expectDestinationQueueToBe(elevator, [2]);
+        });
+
+        test("If a floor further away was pressed now, do not override it", () => {
+            elevator.pressedFloors = [2];
+            elevator.destinationQueue = [2];
+            elevator.trigger("floor_button_pressed", 3);
+
+            expectDestinationQueueToBe(elevator, [2]);
+        });
+    })
+
+    test("If a higher floor is pressed, disable down indicator", () => {
+        elevator.goingUpIndicator(true);
+        elevator.goingDownIndicator(true);
+
         elevator.trigger("floor_button_pressed", 2);
 
-        expectDestinationQueueToBe(elevator, [2]);
-        expect(elevator.checkDestinationQueue).toHaveBeenCalled();
         expectOnlyUpIndicator(elevator);
     });
 
-    test("If floor pressed is higher, then remove up request", () => {
-        elevator.trigger("floor_button_pressed", 2);
+    test("If a lower floor is pressed, disable down indicator", () => {
+        elevator.goingUpIndicator(true);
+        elevator.goingDownIndicator(true);
 
-        expect(floor.getUpRequestStatus()).toBe('inactive');
-        expect(floor.getDownRequestStatus()).toBe('active');
-    });
-
-    test("If floor pressed is lower, then remove down request", () => {
         elevator.trigger("floor_button_pressed", 0);
 
-        expect(floor.getUpRequestStatus()).toBe('active');
-        expect(floor.getDownRequestStatus()).toBe('inactive');
+        expectOnlyDownIndicator(elevator);
     });
-
-    test("If a floor closer was pressed now, override it", () => {
-        elevator.pressedFloors = [3];
-        elevator.destinationQueue = [3];
-        elevator.trigger("floor_button_pressed", 2);
-
-        expectDestinationQueueToBe(elevator, [2]);
-    });
-
-    test("If a floor further away was pressed now, do not override it", () => {
-        elevator.pressedFloors = [2];
-        elevator.destinationQueue = [2];
-        elevator.trigger("floor_button_pressed", 3);
-
-        expectDestinationQueueToBe(elevator, [2]);
-    })
 });
 
 describe("Elevator stopped:", () => {
-    var elevator: MockElevator;
-    var stoppedFloor: MockFloor;
-
-    beforeEach(() => {
-        // The elevator drives to floor 1 and stops there
-        elevator = elevators[0];
-        elevator.currentFloorValue = 1;
-        elevator.goingDownIndicator(true);
-        elevator.goingUpIndicator(true);
-
-        stoppedFloor = floors[elevator.currentFloorValue];
-    });
-
-    describe('If at least one floor button is pressed', () => {
-        test("If multiple floor buttons are already pressed, go to the nearest next", () => {
-            elevator.pressedFloors = [3, 2];
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-
-            expectDestinationQueueToBe(elevator, [2]);
-            expect(elevator.checkDestinationQueue).toHaveBeenCalled();
-            expectOnlyUpIndicator(elevator);
-        });
-
-        test("If the elevator moves up, clear the up request", () => {
-            elevator.destinationQueue = [2];
-            elevator.pressedFloors = [2];
-
-            stoppedFloor.setUpRequestStatus('active');
-            stoppedFloor.setDownRequestStatus('active');
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-
-            expectDestinationQueueToBe(elevator, [2]);
-
-            const floor = floors[elevator.currentFloorValue];
-            expect(floor.getUpRequestStatus()).toBe('inactive');
-            expect(floor.getDownRequestStatus()).toBe('active');
-        });
-
-        test("If the elevator moves down, clear the down request", () => {
-            elevator.destinationQueue = [0];
-            elevator.pressedFloors = [0];
-
-            stoppedFloor.setUpRequestStatus('active');
-            stoppedFloor.setDownRequestStatus('active');
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-
-            expectDestinationQueueToBe(elevator, [0]);
-
-            expect(stoppedFloor.getUpRequestStatus()).toBe('active');
-            expect(stoppedFloor.getDownRequestStatus()).toBe('inactive');
-        });
-    });
-
-    describe("If no floor button is pressed:", () => {
-        test("If there are no requests, simply wait and turn on up and down indicators", () => {
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-            expectDestinationQueueToBe(elevator, []);
-            expectUpAndDownIndicators(elevator);
-        });
-
-        test("If there is still an active up request on the current floor, then wait", () => {
-            floors[1].setUpRequestStatus('active');
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-            expectDestinationQueueToBe(elevator, []);
-            expectOnlyUpIndicator(elevator);
-        });
-
-        test("If there is still an accepted up request on the current floor, then wait", () => {
-            floors[1].setUpRequestStatus('accepted');
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-            expectDestinationQueueToBe(elevator, []);
-            expectOnlyUpIndicator(elevator);
-        });
-
-        test("If there is still an active down request on the current floor, then wait", () => {
-            floors[1].setDownRequestStatus('active');
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-            expectDestinationQueueToBe(elevator, []);
-            expectOnlyDownIndicator(elevator);
-        });
-
-        test("If there is still an accepted down request on the current floor, then wait", () => {
-            floors[1].setDownRequestStatus('accepted');
-
-            elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-            expectDestinationQueueToBe(elevator, []);
-            expectOnlyDownIndicator(elevator);
-        });
-
-        describe("About requests on other floors:", () => {
-            test("If there are requests on multiple floors, go to the nearest", () => {
-                floors[2].setUpRequestStatus('active');
-                floors[3].setUpRequestStatus('active');
-
-                elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-                expectDestinationQueueToBe(elevator, [2]);
-                expect(elevator.checkDestinationQueue).toHaveBeenCalled();
-
-
-            });
-
-            test("If it is an up request, then set only up indicator and accept request", () => {
-                const floor = floors[2];
-                floor.setUpRequestStatus('active');
-
-                elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-                expectOnlyUpIndicator(elevator);
-                expect(floor.getUpRequestStatus()).toBe("accepted");
-            });
-
-            test("If it is a down request, then set only down indicator and accept request", () => {
-                const floor = floors[2];
-                floor.setDownRequestStatus('active');
-
-                elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
-                expectOnlyDownIndicator(elevator);
-                expect(floor.getDownRequestStatus()).toBe("accepted");
-            });
-        })
-
+    test("Do nothing", () => {
+        // This test only exists for documentation purposes
     })
 });
 
@@ -460,51 +335,161 @@ describe("Passing floor:", () => {
     // TODO: Test for: If on the way down to pressed floor
 });
 
-test("Increasing load factor increments estimated passenger count", () => {
-    const elevator = elevators[0];
-    elevator._lastUpdatedLoadFactor = 0.2;
-    elevator.loadFactorValue = 0.5;
+describe("On idle:", () => {
+    var elevator: MockElevator;
+    var currentFloor: MockFloor;
 
-    game.update(1, elevators, floors);
+    beforeEach(() => {
+        elevator = elevators[0];
+        elevator.currentFloorValue = 1;
 
-    expect(elevator._estimatedPassengerCount).toBe(1);
-    expect(elevator._lastUpdatedLoadFactor).toBe(0.5);
-});
+        currentFloor = floors[1];
+        currentFloor.setUpRequestStatus("active");
+        currentFloor.setDownRequestStatus("active");
+    });
 
-test("Decreasing load factor decrements estimated passenger count", () => {
-    const elevator = elevators[0];
-    elevator._lastUpdatedLoadFactor = 0.5;
-    elevator.loadFactorValue = 0.2;
-    elevator._estimatedPassengerCount = 2;
+    test("If floor has active up request and up indicator is on, then deactivate up request", () => {
+        elevator.goingUpIndicator(true);
+        elevator.goingDownIndicator(false);
 
-    game.update(1, elevators, floors);
+        elevator.trigger("idle");
 
-    expect(elevator._estimatedPassengerCount).toBe(1);
-    expect(elevator._lastUpdatedLoadFactor).toBe(0.2);
-});
+        expect(currentFloor.getUpRequestStatus()).toBe('inactive');
+        expect(currentFloor.getDownRequestStatus()).toBe('active');
+    });
 
-test("Estimated passenger count does not exceed maximum passenger count", () => {
-    const elevator = elevators[0];
-    elevator._lastUpdatedLoadFactor = 0.2;
-    elevator.loadFactorValue = 0.5;
-    elevator._estimatedPassengerCount = 4;
+    test("If floor has active up request and up indicator is on, then deactivate up request", () => {
+        elevator.goingUpIndicator(false);
+        elevator.goingDownIndicator(true);
 
-    game.update(1, elevators, floors);
+        elevator.trigger("idle");
 
-    expect(elevator._estimatedPassengerCount).toBe(4);
-    expect(elevator._lastUpdatedLoadFactor).toBe(0.5);
-});
+        expect(currentFloor.getUpRequestStatus()).toBe('active');
+        expect(currentFloor.getDownRequestStatus()).toBe('inactive');
+    });
 
-test("Estimated passenger count is over zero if load factor is over zero", () => {
-    const elevator = elevators[0];
-    elevator._lastUpdatedLoadFactor = 0.2;
-    elevator.loadFactorValue = 0.1;
-    elevator._estimatedPassengerCount = 1;
+    describe('If at least one floor button is pressed', () => {
+        test("Move to to pressed floor", () => {
+            elevator.pressedFloors = [2];
 
-    game.update(1, elevators, floors);
+            elevator.trigger("idle");
 
-    expect(elevator._estimatedPassengerCount).toBe(1);
-    expect(elevator._lastUpdatedLoadFactor).toBe(0.1);
+            expectDestinationQueueToBe(elevator, [2]);
+            expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+            expectOnlyUpIndicator(elevator);
+        });
+
+        test("If multiple floor buttons are pressed, move to the nearest", () => {
+            elevator.pressedFloors = [3, 2];
+
+            elevator.trigger("idle");
+
+            expectDestinationQueueToBe(elevator, [2]);
+            expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+            expectOnlyUpIndicator(elevator);
+        });
+    });
+
+    describe("If no floor button is pressed:", () => {
+        describe("If there is a request on the current floor:", () => {
+            test("If there is a request on the current floor, simply wait and turn on up and down indicators", () => {
+                elevator.trigger("idle");
+                expectDestinationQueueToBe(elevator, []);
+                expectUpAndDownIndicators(elevator);
+            });
+
+            test("Even if there are requests on other floors, simply wait and turn on up and down indicators", () => {
+                floors[2].setUpRequestStatus('active');
+                floors[3].setUpRequestStatus('active');
+                elevator.trigger("idle");
+                expectDestinationQueueToBe(elevator, []);
+                expectUpAndDownIndicators(elevator);
+            });
+        });
+
+        describe("If there are only request on other floors:", () => {
+            beforeEach(() => {
+                currentFloor.setUpRequestStatus("inactive");
+                currentFloor.setDownRequestStatus("inactive");
+            });
+
+            test("If there are requests on multiple floors, go to the nearest", () => {
+                floors[2].setUpRequestStatus('active');
+                floors[3].setUpRequestStatus('active');
+
+                elevator.trigger("idle");
+                expectDestinationQueueToBe(elevator, [2]);
+                expect(elevator.checkDestinationQueue).toHaveBeenCalled();
+            });
+
+            test("If it is an up request, then set only up indicator and accept request", () => {
+                const floor = floors[2];
+                floor.setUpRequestStatus('active');
+
+                elevator.trigger("idle");
+                expectOnlyUpIndicator(elevator);
+                expect(floor.getUpRequestStatus()).toBe("accepted");
+            });
+
+            test("If it is a down request, then set only down indicator and accept request", () => {
+                const floor = floors[2];
+                floor.setDownRequestStatus('active');
+
+                elevator.trigger("idle");
+                expectOnlyDownIndicator(elevator);
+                expect(floor.getDownRequestStatus()).toBe("accepted");
+            });
+        })
+    });
+
+    describe("On update:", () => {
+        test("Increasing load factor increments estimated passenger count", () => {
+            const elevator = elevators[0];
+            elevator._lastUpdatedLoadFactor = 0.2;
+            elevator.loadFactorValue = 0.5;
+
+            game.update(1, elevators, floors);
+
+            expect(elevator._estimatedPassengerCount).toBe(1);
+            expect(elevator._lastUpdatedLoadFactor).toBe(0.5);
+        });
+
+        test("Decreasing load factor decrements estimated passenger count", () => {
+            const elevator = elevators[0];
+            elevator._lastUpdatedLoadFactor = 0.5;
+            elevator.loadFactorValue = 0.2;
+            elevator._estimatedPassengerCount = 2;
+
+            game.update(1, elevators, floors);
+
+            expect(elevator._estimatedPassengerCount).toBe(1);
+            expect(elevator._lastUpdatedLoadFactor).toBe(0.2);
+        });
+
+        test("Estimated passenger count does not exceed maximum passenger count", () => {
+            const elevator = elevators[0];
+            elevator._lastUpdatedLoadFactor = 0.2;
+            elevator.loadFactorValue = 0.5;
+            elevator._estimatedPassengerCount = 4;
+
+            game.update(1, elevators, floors);
+
+            expect(elevator._estimatedPassengerCount).toBe(4);
+            expect(elevator._lastUpdatedLoadFactor).toBe(0.5);
+        });
+
+        test("Estimated passenger count is over zero if load factor is over zero", () => {
+            const elevator = elevators[0];
+            elevator._lastUpdatedLoadFactor = 0.2;
+            elevator.loadFactorValue = 0.1;
+            elevator._estimatedPassengerCount = 1;
+
+            game.update(1, elevators, floors);
+
+            expect(elevator._estimatedPassengerCount).toBe(1);
+            expect(elevator._lastUpdatedLoadFactor).toBe(0.1);
+        });
+    })
 });
 
 // TODO: Elevators sometimes reach their destination but another elevator already picked all people up

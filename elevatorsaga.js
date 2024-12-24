@@ -103,64 +103,64 @@
 
             elevator.on("idle", () => {
                 console.debug(`\nElevator ${elevator._index}: Idle`);
-            });
 
-            elevator.on("stopped_at_floor", (floorNumberStopped) => {
-                console.debug(`\nElevator ${elevator._index}: Stopped at floor ${floorNumberStopped}`);
+                const currentFloorNumber = elevator.currentFloor();
+                const currentFloor = floors[currentFloorNumber];
 
-                const floorStopped = floors[floorNumberStopped];
+                const upRequestStatusBeforeReset = currentFloor.getUpRequestStatus();
+                const downRequestStatusBeforeReset = currentFloor.getDownRequestStatus();
+
+                if (elevator.goingUpIndicator()) {
+                    currentFloor.setUpRequestStatus('inactive');
+                }
+                if (elevator.goingDownIndicator()) {
+                    currentFloor.setDownRequestStatus('inactive');
+                }
 
                 if (elevator.getPressedFloors().length > 0) {
                     setDestination(getClosestPressedFloor());
                     setUpDownIndicatorsByDestination();
 
-                    if (elevator.destinationQueue.length > 0) {
-                        // The elevator is leaving, so clear requests in case the floor button was already pressed by a previous passenger
-                        if (elevator.goingUpIndicator()) {
-                            floorStopped.setUpRequestStatus('inactive');
-                        } else if (elevator.goingDownIndicator()) {
-                            floorStopped.setDownRequestStatus('inactive');
-                        } else {
-                            throw new Error('Both indicators are on or off unexpectedly');
-                        }
-                    }
-
-                    elevator._currentThought = `Was stopped, now targeting pressed floor ${elevator.destinationQueue[0]}`;
-                } else {
-                    if (floorStopped.getUpRequestStatus() === "inactive" && floorStopped.getDownRequestStatus() === "inactive") {
-                        const floorsWithRequest = getFloorsWithRequest();
-                        const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
-
-                        if (floorNumbersWithRequest.length > 0) {
-                            const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
-                            setDestination(closestFloorNumber);
-                            const closestFloor = floors[closestFloorNumber];
-
-                            // TODO: Handle case in which up AND down requests are active
-                            if (closestFloor.getUpRequestStatus() === 'active') {
-                                closestFloor.setUpRequestStatus('accepted');
-                                setUpDownIndicatorsForUp();
-                                elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle up request`;
-                            } else if (closestFloor.getDownRequestStatus() === 'active') {
-                                closestFloor.setDownRequestStatus('accepted');
-                                setUpDownIndicatorsForDown();
-                                elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle down request`;
-                            }
-                        } else {
-                            setBothUpDownIndicators();
-                            elevator._currentThought = `Was stopped without pressed floor, and there are no active requests anywhere. Waiting`;
-                        }
-                    } else {
-                        // TODO: Handle case in which up AND down requests are active
-                        if (floorStopped.getUpRequestStatus() === 'active' || floorStopped.getUpRequestStatus() === "accepted") {
-                            setUpDownIndicatorsForUp();
-                            elevator._currentThought = `Was stopped without pressed floor, waiting for up request on current floor`;
-                        } else if (floorStopped.getDownRequestStatus() === 'active' || floorStopped.getDownRequestStatus() === 'accepted') {
-                            setUpDownIndicatorsForDown();
-                            elevator._currentThought = `Was stopped without pressed floor, waiting for down request on current floor`;
-                        }
-                    }
+                    elevator._currentThought = `Was idle, now targeting pressed floor ${elevator.destinationQueue[0]}`;
+                    return;
                 }
+
+                if (upRequestStatusBeforeReset === "active"
+                    || upRequestStatusBeforeReset === "accepted"
+                    || downRequestStatusBeforeReset === "active"
+                    || downRequestStatusBeforeReset === "accepted") {
+                    setBothUpDownIndicators();
+                    elevator._currentThought = `Was idle without pressed floor, and there is a request on the current floor. Waiting with both indicators on`;
+                    return;
+                }
+
+                const floorsWithRequest = getFloorsWithRequest();
+                const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
+
+                if (floorNumbersWithRequest.length === 0) {
+                    setBothUpDownIndicators();
+                    elevator._currentThought = `Was idle without pressed floor, and there are no active requests anywhere. Waiting with both indicators on`;
+                    return;
+                }
+
+                const closestFloorNumber = getClosestFloorNumber(floorNumbersWithRequest);
+                setDestination(closestFloorNumber);
+                const closestFloor = floors[closestFloorNumber];
+
+                // TODO: Handle case in which up AND down requests are active
+                if (closestFloor.getUpRequestStatus() === 'active') {
+                    closestFloor.setUpRequestStatus('accepted');
+                    setUpDownIndicatorsForUp();
+                    elevator._currentThought = `Was idle without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle up request`;
+                } else if (closestFloor.getDownRequestStatus() === 'active') {
+                    closestFloor.setDownRequestStatus('accepted');
+                    setUpDownIndicatorsForDown();
+                    elevator._currentThought = `Was idle without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle down request`;
+                }
+            });
+
+            elevator.on("stopped_at_floor", (floorNumberStopped) => {
+                console.debug(`\nElevator ${elevator._index}: Stopped at floor ${floorNumberStopped}`);
             });
 
             elevator.on("floor_button_pressed", (floorNumberPressed) => {
