@@ -188,7 +188,16 @@ describe("Up / down button requests on floors:", () => {
 
             expectDestinationQueueToBe(elevator, [floor.floorNum()]);
             expectOnlyUpIndicator(elevator);
-        })
+        });
+
+        test('Do not move an elevator if it has pressed floors', () => {
+            const elevator = elevators[0];
+            elevator.pressedFloors = [2];
+
+            floor.trigger('up_button_pressed');
+
+            expectDestinationQueueToBe(elevator, []);
+        });
     });
 });
 
@@ -492,5 +501,4 @@ describe("On idle:", () => {
     })
 });
 
-// TODO: Elevators sometimes reach their destination but another elevator already picked all people up
 // TODO: When choosing a destination, check if another elevator has a pressed floor button for that floor (with the correct direction)

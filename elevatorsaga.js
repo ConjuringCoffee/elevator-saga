@@ -218,6 +218,7 @@
                     const elevatorFloor = floors[elevator.currentFloor()];
                     return elevator.destinationDirection() === 'stopped'
                         && elevator.destinationQueue.length === 0
+                        && elevator.getPressedFloors().length === 0
                         && elevatorFloor.getUpRequestStatus() === "inactive"
                         && elevatorFloor.getDownRequestStatus() === "inactive"
                 });
