@@ -101,6 +101,10 @@
                 elevator._lastUpdatedLoadFactor = loadFactor;
             }
 
+            elevator.on("idle", () => {
+                console.debug(`\nElevator ${elevator._index}: Idle`);
+            });
+
             elevator.on("stopped_at_floor", (floorNumberStopped) => {
                 console.debug(`\nElevator ${elevator._index}: Stopped at floor ${floorNumberStopped}`);
 
