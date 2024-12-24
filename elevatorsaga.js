@@ -77,8 +77,8 @@
 
             const getFloorsWithRequest = () => {
                 return floors.filter((floor) => {
-                    return floor._downRequestStatus === "active"
-                        || floor._upRequestStatus === "active";
+                    return floor.getDownRequestStatus() === "active"
+                        || floor.getUpRequestStatus() === "active";
                 })
             };
 
@@ -115,9 +115,9 @@
                     if (elevator.destinationQueue.length > 0) {
                         // The elevator is leaving, so clear requests in case the floor button was already pressed by a previous passenger
                         if (elevator.goingUpIndicator()) {
-                            floorStopped._upRequestStatus = 'inactive';
+                            floorStopped.setUpRequestStatus('inactive');
                         } else if (elevator.goingDownIndicator()) {
-                            floorStopped._downRequestStatus = 'inactive';
+                            floorStopped.setDownRequestStatus('inactive');
                         } else {
                             throw new Error('Both indicators are on or off unexpectedly');
                         }
@@ -125,7 +125,7 @@
 
                     elevator._currentThought = `Was stopped, now targeting pressed floor ${elevator.destinationQueue[0]}`;
                 } else {
-                    if (floorStopped._upRequestStatus === "inactive" && floorStopped._downRequestStatus === "inactive") {
+                    if (floorStopped.getUpRequestStatus() === "inactive" && floorStopped.getDownRequestStatus() === "inactive") {
                         const floorsWithRequest = getFloorsWithRequest();
                         const floorNumbersWithRequest = floorsWithRequest.map((floor) => floor.floorNum());
 
@@ -135,12 +135,12 @@
                             const closestFloor = floors[closestFloorNumber];
 
                             // TODO: Handle case in which up AND down requests are active
-                            if (closestFloor._upRequestStatus === 'active') {
-                                closestFloor._upRequestStatus = 'accepted';
+                            if (closestFloor.getUpRequestStatus() === 'active') {
+                                closestFloor.setUpRequestStatus('accepted');
                                 setUpDownIndicatorsForUp();
                                 elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle up request`;
-                            } else if (closestFloor._downRequestStatus === 'active') {
-                                closestFloor._downRequestStatus = 'accepted';
+                            } else if (closestFloor.getDownRequestStatus() === 'active') {
+                                closestFloor.setDownRequestStatus('accepted');
                                 setUpDownIndicatorsForDown();
                                 elevator._currentThought = `Was stopped without pressed floor, targeting floor ${elevator.destinationQueue[0]} to handle down request`;
                             }
@@ -150,10 +150,10 @@
                         }
                     } else {
                         // TODO: Handle case in which up AND down requests are active
-                        if (floorStopped._upRequestStatus === 'active' || floorStopped._upRequestStatus === "accepted") {
+                        if (floorStopped.getUpRequestStatus() === 'active' || floorStopped.getUpRequestStatus() === "accepted") {
                             setUpDownIndicatorsForUp();
                             elevator._currentThought = `Was stopped without pressed floor, waiting for up request on current floor`;
-                        } else if (floorStopped._downRequestStatus === 'active' || floorStopped._downRequestStatus === 'accepted') {
+                        } else if (floorStopped.getDownRequestStatus() === 'active' || floorStopped.getDownRequestStatus() === 'accepted') {
                             setUpDownIndicatorsForDown();
                             elevator._currentThought = `Was stopped without pressed floor, waiting for down request on current floor`;
                         }
@@ -167,9 +167,9 @@
                 const floor = floors[elevator.currentFloor()];
 
                 if (floorNumberPressed > elevator.currentFloor()) {
-                    floor._upRequestStatus = 'inactive';
+                    floor.setUpRequestStatus('inactive');
                 } else if (floorNumberPressed < elevator.currentFloor()) {
-                    floor._downRequestStatus = 'inactive';
+                    floor.setDownRequestStatus('inactive');
                 } else {
                     throw new Error('A button was pressed for the current floor');
                 }
@@ -190,16 +190,16 @@
                 if (elevator._estimatedPassengerCount < elevator.maxPassengerCount() && elevator.loadFactor() < 1) {
                     const floorPassing = floors[floorNumberPassing];
 
-                    if (direction === "up" && elevator.goingUpIndicator() === true && floorPassing._upRequestStatus === "active") {
+                    if (direction === "up" && elevator.goingUpIndicator() === true && floorPassing.getUpRequestStatus() === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForUp();
-                        floorPassing._upRequestStatus = 'accepted';
+                        floorPassing.setUpRequestStatus('accepted');
 
                         elevator._currentThought = `Was on the way up to floor ${currentDestination}, but stopping at passing floor ${floorNumberPassing} to handle up request`;
-                    } else if (direction === "down" && elevator.goingDownIndicator() === true && floorPassing._downRequestStatus === "active") {
+                    } else if (direction === "down" && elevator.goingDownIndicator() === true && floorPassing.getDownRequestStatus() === "active") {
                         setDestination(floorNumberPassing);
                         setUpDownIndicatorsForDown();
-                        floorPassing._downRequestStatus = 'accepted';
+                        floorPassing.setDownRequestStatus('accepted');
 
                         elevator._currentThought = `Was on the way down to floor ${currentDestination}, but stopping at passing floor ${floorNumberPassing} to handle down request`;
                     }
@@ -213,8 +213,8 @@
                     const elevatorFloor = floors[elevator.currentFloor()];
                     return elevator.destinationDirection() === 'stopped'
                         && elevator.destinationQueue.length === 0
-                        && elevatorFloor._upRequestStatus === "inactive"
-                        && elevatorFloor._downRequestStatus === "inactive"
+                        && elevatorFloor.getUpRequestStatus() === "inactive"
+                        && elevatorFloor.getDownRequestStatus() === "inactive"
                 });
             };
 
@@ -238,12 +238,21 @@
                 return closestElevator;
             }
 
-            floor._downRequestStatus = 'inactive';
             floor._upRequestStatus = 'inactive';
+            floor.setUpRequestStatus = (newStatus) => {
+                floor._upRequestStatus = newStatus;
+            }
+            floor.getUpRequestStatus = () => floor._upRequestStatus;
+
+            floor._downRequestStatus = 'inactive';
+            floor.setDownRequestStatus = (newStatus) => {
+                floor._downRequestStatus = newStatus
+            };
+            floor.getDownRequestStatus = () => floor._downRequestStatus;
 
             floor.on("up_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Up button was pressed`);
-                floor._upRequestStatus = 'active';
+                floor.setUpRequestStatus('active');
 
                 const idleElevators = getIdleElevators();
 
@@ -261,7 +270,7 @@
 
             floor.on("down_button_pressed", () => {
                 console.debug(`\nFloor ${floor.floorNum()}: Down button was pressed`);
-                floor._downRequestStatus = 'active';
+                floor.setDownRequestStatus('active');
 
                 const idleElevators = getIdleElevators();
 

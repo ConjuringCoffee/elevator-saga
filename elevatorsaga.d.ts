@@ -100,10 +100,17 @@ interface OriginalFloor {
     on<Event extends keyof FloorEvents>(type: Event, handler: FloorEvents[Event]): void;
 }
 
-// TODO: Move custom variables to separate interface that extends the original
+type RequestStatus = 'inactive' | 'active' | 'accepted';
+
 interface Floor extends OriginalFloor {
-    _upRequestStatus: 'inactive' | 'active' | 'accepted';
-    _downRequestStatus: 'inactive' | 'active' | 'accepted';
+    _upRequestStatus: RequestStatus;
+    _downRequestStatus: RequestStatus;
+
+    setUpRequestStatus: (newStatus: RequestStatus) => void;
+    getUpRequestStatus: () => RequestStatus;
+    setDownRequestStatus: (newStatus: RequestStatus) => void;
+    getDownRequestStatus: () => RequestStatus;
+
 }
 
 interface Game {

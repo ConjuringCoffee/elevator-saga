@@ -119,7 +119,19 @@ beforeEach(() => {
                 if (this.handlers[type]) {
                     (this.handlers[type] as any)(...args);
                 }
-            }
+            },
+            setUpRequestStatus() {
+                throw new Error("No need to implement this ever");
+            },
+            getUpRequestStatus() {
+                throw new Error("No need to implement this ever");
+            },
+            setDownRequestStatus() {
+                throw new Error("No need to implement this ever");
+            },
+            getDownRequestStatus() {
+                throw new Error("No need to implement this ever");
+            },
         };
     };
 
@@ -145,8 +157,8 @@ test('All elevators have an initial load factor of zero', () => {
 
 test('All requests on floors are false in the beginning', () => {
     floors.forEach((floor) => {
-        expect(floor._upRequestStatus).toBe('inactive');
-        expect(floor._downRequestStatus).toBe('inactive');
+        expect(floor.getUpRequestStatus()).toBe('inactive');
+        expect(floor.getDownRequestStatus()).toBe('inactive');
     });
 });
 
@@ -162,12 +174,12 @@ describe("Up / down button requests on floors:", () => {
     describe('If no elevator is stopped on the same floor:', () => {
         test('Up button request is remembered', () => {
             floor.trigger('up_button_pressed');
-            expect(floor._upRequestStatus).toBe('active');
+            expect(floor.getUpRequestStatus()).toBe('active');
         });
 
         test('Down button request is remembered', () => {
             floor.trigger('down_button_pressed');
-            expect(floor._downRequestStatus).toBe('active');
+            expect(floor.getDownRequestStatus()).toBe('active');
         });
 
         test('If an elevator is waiting, move it to the floor', () => {
@@ -189,8 +201,8 @@ describe("Floor button presses:", () => {
         elevator.currentFloorValue = 1;
 
         floor = floors[1];
-        floor._upRequestStatus = 'active';
-        floor._downRequestStatus = 'active';
+        floor.setUpRequestStatus('active');
+        floor.setDownRequestStatus('active');
     });
 
     test("If destination queue is empty, go to that floor", () => {
@@ -204,15 +216,15 @@ describe("Floor button presses:", () => {
     test("If floor pressed is higher, then remove up request", () => {
         elevator.trigger("floor_button_pressed", 2);
 
-        expect(floor._upRequestStatus).toBe('inactive');
-        expect(floor._downRequestStatus).toBe('active');
+        expect(floor.getUpRequestStatus()).toBe('inactive');
+        expect(floor.getDownRequestStatus()).toBe('active');
     });
 
     test("If floor pressed is lower, then remove down request", () => {
         elevator.trigger("floor_button_pressed", 0);
 
-        expect(floor._upRequestStatus).toBe('active');
-        expect(floor._downRequestStatus).toBe('inactive');
+        expect(floor.getUpRequestStatus()).toBe('active');
+        expect(floor.getDownRequestStatus()).toBe('inactive');
     });
 
     test("If a floor closer was pressed now, override it", () => {
@@ -260,31 +272,31 @@ describe("Elevator stopped:", () => {
             elevator.destinationQueue = [2];
             elevator.pressedFloors = [2];
 
-            stoppedFloor._upRequestStatus = 'active';
-            stoppedFloor._downRequestStatus = 'active';
+            stoppedFloor.setUpRequestStatus('active');
+            stoppedFloor.setDownRequestStatus('active');
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
 
             expectDestinationQueueToBe(elevator, [2]);
 
             const floor = floors[elevator.currentFloorValue];
-            expect(floor._upRequestStatus).toBe('inactive');
-            expect(floor._downRequestStatus).toBe('active');
+            expect(floor.getUpRequestStatus()).toBe('inactive');
+            expect(floor.getDownRequestStatus()).toBe('active');
         });
 
         test("If the elevator moves down, clear the down request", () => {
             elevator.destinationQueue = [0];
             elevator.pressedFloors = [0];
 
-            stoppedFloor._upRequestStatus = 'active';
-            stoppedFloor._downRequestStatus = 'active';
+            stoppedFloor.setUpRequestStatus('active');
+            stoppedFloor.setDownRequestStatus('active');
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
 
             expectDestinationQueueToBe(elevator, [0]);
 
-            expect(stoppedFloor._upRequestStatus).toBe('active');
-            expect(stoppedFloor._downRequestStatus).toBe('inactive');
+            expect(stoppedFloor.getUpRequestStatus()).toBe('active');
+            expect(stoppedFloor.getDownRequestStatus()).toBe('inactive');
         });
     });
 
@@ -296,7 +308,7 @@ describe("Elevator stopped:", () => {
         });
 
         test("If there is still an active up request on the current floor, then wait", () => {
-            floors[1]._upRequestStatus = 'active';
+            floors[1].setUpRequestStatus('active');
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
@@ -304,7 +316,7 @@ describe("Elevator stopped:", () => {
         });
 
         test("If there is still an accepted up request on the current floor, then wait", () => {
-            floors[1]._upRequestStatus = 'accepted';
+            floors[1].setUpRequestStatus('accepted');
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
@@ -312,7 +324,7 @@ describe("Elevator stopped:", () => {
         });
 
         test("If there is still an active down request on the current floor, then wait", () => {
-            floors[1]._downRequestStatus = 'active';
+            floors[1].setDownRequestStatus('active');
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
@@ -320,7 +332,7 @@ describe("Elevator stopped:", () => {
         });
 
         test("If there is still an accepted down request on the current floor, then wait", () => {
-            floors[1]._downRequestStatus = 'accepted';
+            floors[1].setDownRequestStatus('accepted');
 
             elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
             expectDestinationQueueToBe(elevator, []);
@@ -329,8 +341,8 @@ describe("Elevator stopped:", () => {
 
         describe("About requests on other floors:", () => {
             test("If there are requests on multiple floors, go to the nearest", () => {
-                floors[2]._upRequestStatus = 'active';
-                floors[3]._upRequestStatus = 'active';
+                floors[2].setUpRequestStatus('active');
+                floors[3].setUpRequestStatus('active');
 
                 elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
                 expectDestinationQueueToBe(elevator, [2]);
@@ -341,20 +353,20 @@ describe("Elevator stopped:", () => {
 
             test("If it is an up request, then set only up indicator and accept request", () => {
                 const floor = floors[2];
-                floor._upRequestStatus = 'active';
+                floor.setUpRequestStatus('active');
 
                 elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
                 expectOnlyUpIndicator(elevator);
-                expect(floor._upRequestStatus).toBe("accepted");
+                expect(floor.getUpRequestStatus()).toBe("accepted");
             });
 
             test("If it is a down request, then set only down indicator and accept request", () => {
                 const floor = floors[2];
-                floor._downRequestStatus = 'active';
+                floor.setDownRequestStatus('active');
 
                 elevator.trigger("stopped_at_floor", elevator.currentFloorValue);
                 expectOnlyDownIndicator(elevator);
-                expect(floor._downRequestStatus).toBe("accepted");
+                expect(floor.getDownRequestStatus()).toBe("accepted");
             });
         })
 
@@ -376,7 +388,7 @@ describe("Passing floor:", () => {
             elevator.destinationDirectionValue = 'up';
 
             floor = floors[1];
-            floor._upRequestStatus = 'active';
+            floor.setUpRequestStatus('active');
         });
 
         test("Set floor as destination if an additional passenger fits", () => {
@@ -389,7 +401,7 @@ describe("Passing floor:", () => {
 
         test("Also accept the up request", () => {
             elevator.trigger("passing_floor", floor.floorNum(), "up");
-            expect(floor._upRequestStatus).toBe('accepted');
+            expect(floor.getUpRequestStatus()).toBe('accepted');
         });
 
         test("Do not set floor as destination if no additional passenger fits", () => {
@@ -425,23 +437,23 @@ describe("Passing floor:", () => {
             elevator.destinationQueue = [3];
             elevator.destinationDirectionValue = 'up';
             floor = floors[1];
-            floor._upRequestStatus = 'active';
+            floor.setUpRequestStatus('active');
 
             elevator.trigger("passing_floor", 1, "up");
 
             expectDestinationQueueToBe(elevator, [1]);
-            expect(floor._upRequestStatus).toBe("accepted");
+            expect(floor.getUpRequestStatus()).toBe("accepted");
         });
         test("If passing floor only has down request, then do not stop", () => {
             elevator.destinationQueue = [3];
             elevator.destinationDirectionValue = 'up';
             floor = floors[1];
-            floor._downRequestStatus = 'active';
+            floor.setDownRequestStatus('active');
 
             elevator.trigger("passing_floor", 1, "up");
 
             expectDestinationQueueToBe(elevator, [3]);
-            expect(floor._downRequestStatus).toBe("active");
+            expect(floor.getDownRequestStatus()).toBe("active");
         });
     });
 
