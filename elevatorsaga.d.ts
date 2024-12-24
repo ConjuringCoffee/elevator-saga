@@ -22,8 +22,7 @@ interface ElevatorEvents {
     stopped_at_floor: (floorNumber: number) => void;
 }
 
-// TODO: Move custom variables to separate interface that extends the original
-interface Elevator {
+interface OriginalElevator {
     /** 
      * Queue the elevator to go to specified floor number. 
      * If you specify true as second argument, the elevator will go to that floor directly, and then go to any other queued floors.
@@ -77,7 +76,9 @@ interface Elevator {
      */
     getPressedFloors: () => number[];
     on: <Event extends keyof ElevatorEvents>(type: Event, handler: ElevatorEvents[Event]) => void;
+}
 
+interface Elevator extends OriginalElevator {
     _index: number;
     _lastUpdatedLoadFactor: number;
     _estimatedPassengerCount: number;
@@ -91,13 +92,16 @@ interface FloorEvents {
     down_button_pressed: () => void;
 }
 
-// TODO: Move custom variables to separate interface that extends the original
-interface Floor {
+interface OriginalFloor {
     /**
      * Gets the floor number of the floor object.
      */
     floorNum: () => number;
     on<Event extends keyof FloorEvents>(type: Event, handler: FloorEvents[Event]): void;
+}
+
+// TODO: Move custom variables to separate interface that extends the original
+interface Floor extends OriginalFloor {
     _upRequestStatus: 'inactive' | 'active' | 'accepted';
     _downRequestStatus: 'inactive' | 'active' | 'accepted';
 }
