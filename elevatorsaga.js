@@ -168,25 +168,6 @@
 
             elevator.on("floor_button_pressed", (floorNumberPressed) => {
                 console.debug(`\nElevator ${elevator._index}: Button for floor ${floorNumberPressed} was pressed`);
-
-                const floor = floors[elevator.currentFloor()];
-
-                if (floorNumberPressed > elevator.currentFloor()) {
-                    floor.setUpRequestStatus('inactive');
-                } else if (floorNumberPressed < elevator.currentFloor()) {
-                    floor.setDownRequestStatus('inactive');
-                } else {
-                    throw new Error('A button was pressed for the current floor');
-                }
-
-                if (elevator.destinationQueue.length === 0
-                    || Math.abs(elevator.currentFloor() - floorNumberPressed) < Math.abs(elevator.currentFloor() - elevator.destinationQueue[0])) {
-                    setDestination(floorNumberPressed);
-                    setUpDownIndicatorsByDestination();
-
-                    // TODO: Do something with the requests on that floor
-                    elevator._currentThought = `Targeting pressed floor ${elevator.destinationQueue[0]}`;
-                }
             });
 
             elevator.on("passing_floor", (floorNumberPassing, direction) => {

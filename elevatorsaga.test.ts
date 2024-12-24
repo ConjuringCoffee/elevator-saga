@@ -201,53 +201,9 @@ describe("Up / down button requests on floors:", () => {
     });
 });
 
-describe("Floor button presses:", () => {
-    var elevator: MockElevator;
-    var floor: MockFloor;
-
-    beforeEach(() => {
-        elevator = elevators[0];
-        elevator.currentFloorValue = 1;
-
-        floor = floors[1];
-        floor.setUpRequestStatus('active');
-        floor.setDownRequestStatus('active');
-    });
-
-    describe("If a floor button was previously pressed", () => {
-        test("If a floor closer was pressed now, override it", () => {
-            elevator.pressedFloors = [3];
-            elevator.destinationQueue = [3];
-            elevator.trigger("floor_button_pressed", 2);
-
-            expectDestinationQueueToBe(elevator, [2]);
-        });
-
-        test("If a floor further away was pressed now, do not override it", () => {
-            elevator.pressedFloors = [2];
-            elevator.destinationQueue = [2];
-            elevator.trigger("floor_button_pressed", 3);
-
-            expectDestinationQueueToBe(elevator, [2]);
-        });
-    })
-
-    test("If a higher floor is pressed, disable down indicator", () => {
-        elevator.goingUpIndicator(true);
-        elevator.goingDownIndicator(true);
-
-        elevator.trigger("floor_button_pressed", 2);
-
-        expectOnlyUpIndicator(elevator);
-    });
-
-    test("If a lower floor is pressed, disable down indicator", () => {
-        elevator.goingUpIndicator(true);
-        elevator.goingDownIndicator(true);
-
-        elevator.trigger("floor_button_pressed", 0);
-
-        expectOnlyDownIndicator(elevator);
+describe("Floor button pressed:", () => {
+    test("Do nothing", () => {
+        // This test only exists for documentation purposes
     });
 });
 
