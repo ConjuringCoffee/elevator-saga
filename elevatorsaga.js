@@ -110,8 +110,6 @@
 
                 const floorStopped = floors[floorNumberStopped];
 
-                elevator._estimatePassengerCount();
-
                 if (elevator.getPressedFloors().length > 0) {
                     setDestination(getClosestPressedFloor());
                     setUpDownIndicatorsByDestination();
