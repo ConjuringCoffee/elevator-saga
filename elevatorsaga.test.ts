@@ -392,17 +392,17 @@ describe("On idle:", () => {
 
     describe("If no floor button is pressed:", () => {
         describe("If there is a request on the current floor:", () => {
-            test("If there is a request on the current floor, simply wait and turn on up and down indicators", () => {
+            test("If there is a request on the current floor, set current floor as destination and turn on up and down indicators", () => {
                 elevator.trigger("idle");
-                expectDestinationQueueToBe(elevator, []);
+                expectDestinationQueueToBe(elevator, [currentFloor.floorNum()]);
                 expectUpAndDownIndicators(elevator);
             });
 
-            test("Even if there are requests on other floors, simply wait and turn on up and down indicators", () => {
+            test("Even if there are requests on other floors, set current floor as destination and turn on up and down indicators", () => {
                 floors[2].setUpRequestStatus('active');
                 floors[3].setUpRequestStatus('active');
                 elevator.trigger("idle");
-                expectDestinationQueueToBe(elevator, []);
+                expectDestinationQueueToBe(elevator, [currentFloor.floorNum()]);
                 expectUpAndDownIndicators(elevator);
             });
         });

@@ -131,6 +131,9 @@
                     || downRequestStatusBeforeReset === "accepted") {
                     setBothUpDownIndicators();
                     elevator._currentThought = `Was idle without pressed floor, and there is a request on the current floor. Waiting with both indicators on`;
+
+                    // Workaround: If the destination is not set to the current floor, then people on this floor don't understand they can get onto this elevator
+                    setDestination(currentFloorNumber);
                     return;
                 }
 
